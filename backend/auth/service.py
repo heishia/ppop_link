@@ -42,6 +42,12 @@ class AuthService:
     
     def get_oauth_login_url(self, state: str) -> str:
         """PPOP Auth 로그인 URL 생성"""
+        if not settings.PPOP_AUTH_CLIENT_URL:
+            raise ValueError("PPOP_AUTH_CLIENT_URL is not configured")
+        
+        # URL 정규화: 끝에 슬래시가 있으면 제거
+        client_url = settings.PPOP_AUTH_CLIENT_URL.rstrip("/")
+        
         params = {
             "client_id": settings.PPOP_AUTH_CLIENT_ID,
             "redirect_uri": settings.PPOP_AUTH_REDIRECT_URI,
@@ -49,7 +55,7 @@ class AuthService:
             "state": state
         }
         query_string = "&".join(f"{k}={v}" for k, v in params.items())
-        return f"{settings.PPOP_AUTH_CLIENT_URL}/oauth/authorize?{query_string}"
+        return f"{client_url}/oauth/authorize?{query_string}"
     
     async def exchange_code_for_token(self, code: str) -> OAuthTokenResponse:
         """
