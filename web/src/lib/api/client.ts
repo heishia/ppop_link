@@ -25,6 +25,18 @@ apiClient.interceptors.request.use(
   }
 );
 
+// OAuth 관련 경로 (인증 전 단계이므로 401 interceptor 우회)
+const OAUTH_PATHS = [
+  "/api/auth/oauth/callback",
+  "/api/auth/oauth/login",
+];
+
+// 요청 URL이 OAuth 관련 경로인지 확인
+const isOAuthPath = (url: string | undefined): boolean => {
+  if (!url) return false;
+  return OAUTH_PATHS.some((path) => url.includes(path));
+};
+
 // Response interceptor to handle token refresh
 apiClient.interceptors.response.use(
   (response) => response,
@@ -32,6 +44,11 @@ apiClient.interceptors.response.use(
     const originalRequest = error.config as InternalAxiosRequestConfig & {
       _retry?: boolean;
     };
+
+    // OAuth 관련 요청은 토큰 갱신 로직을 우회 (인증 전 단계)
+    if (isOAuthPath(originalRequest?.url)) {
+      return Promise.reject(error);
+    }
 
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;

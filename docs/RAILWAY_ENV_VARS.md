@@ -153,7 +153,7 @@ PPOP_AUTH_CLIENT_ORIGIN=https://auth-client-production-04b4.up.railway.app
 # Server Configuration
 DEBUG=false
 API_PREFIX=/api
-CORS_ORIGINS=https://ppoplink.site,https://www.ppoplink.site
+CORS_ORIGINS=https://ppoplink.site,https://www.ppoplink.site,https://your-project.vercel.app
 
 # Storage (Supabase Storage)
 STORAGE_BUCKET_PROFILES=profiles
@@ -181,7 +181,12 @@ SENTRY_ENVIRONMENT=production
 - 쉼표로 구분된 도메인 목록
 - 프로토콜 포함 (http:// 또는 https://)
 - 공백 없이 입력
-- 예: `https://ppoplink.site,https://www.ppoplink.site`
+- Vercel 도메인과 커스텀 도메인 모두 포함
+- 예: `https://ppoplink.site,https://www.ppoplink.site,https://your-project.vercel.app`
+
+**중요:** Vercel에 배포된 프론트엔드 도메인을 반드시 포함해야 합니다:
+- Vercel 기본 도메인: `https://your-project.vercel.app` (Vercel 프로젝트 설정에서 확인)
+- 커스텀 도메인: `https://yourdomain.com` (설정한 경우)
 
 ### 보안
 
@@ -207,11 +212,18 @@ railway variables
 ### CORS 에러가 발생하는 경우
 
 1. `CORS_ORIGINS` 환경변수 확인
+   - Vercel 도메인이 포함되어 있는지 확인 (`https://your-project.vercel.app`)
+   - 커스텀 도메인이 포함되어 있는지 확인 (`https://yourdomain.com`)
 2. `PPOP_AUTH_CLIENT_ORIGIN` 환경변수 확인 (PPOP Auth 클라이언트 도메인)
 3. 프론트엔드 도메인이 포함되어 있는지 확인
 4. 프로토콜(http/https)이 올바른지 확인
-5. 쉼표 구분이 올바른지 확인
+5. 쉼표 구분이 올바른지 확인 (공백 없이 쉼표로만 구분)
 6. Railway 서비스 재시작
+
+**Vercel 도메인 확인 방법:**
+- Vercel 대시보드 → 프로젝트 선택 → Settings → Domains
+- 기본 Vercel 도메인: `your-project.vercel.app` 형식
+- 커스텀 도메인: 설정한 도메인
 
 **PPOP Auth 클라이언트에서 발생하는 CORS 오류의 경우:**
 

@@ -18,7 +18,9 @@ from backend.core.exceptions import (
     UsernameAlreadyExistsError,
     DatabaseError,
     ServiceNotFoundError,
-    SubscriptionError
+    SubscriptionError,
+    OAuthCodeExchangeError,
+    OAuthTokenRefreshError
 )
 from backend.core.logger import get_logger
 from backend.core.models import (
@@ -69,7 +71,8 @@ class AuthService:
         """
         token_url = f"{settings.PPOP_AUTH_API_URL}/oauth/token"
         
-        data = {
+        # 요청 데이터 구성
+        request_data = {
             "grant_type": "authorization_code",
             "code": code,
             "client_id": settings.PPOP_AUTH_CLIENT_ID,
@@ -77,18 +80,29 @@ class AuthService:
             "redirect_uri": settings.PPOP_AUTH_REDIRECT_URI
         }
         
+        # 디버깅: 요청 정보 로깅 (client_secret은 마스킹)
+        logger.info(f"Token exchange request to: {token_url}")
+        logger.info(f"Request data: grant_type={request_data['grant_type']}, "
+                   f"code={code[:10]}..., client_id={request_data['client_id']}, "
+                   f"redirect_uri={request_data['redirect_uri']}")
+        
         async with httpx.AsyncClient() as client:
+            # JSON 형식으로 요청 (auth-server가 JSON을 기대함)
             response = await client.post(
                 token_url,
-                data=data,
-                headers={"Content-Type": "application/x-www-form-urlencoded"}
+                json=request_data,
+                headers={"Content-Type": "application/json"}
             )
+            
+            # 디버깅: 응답 정보 로깅
+            logger.info(f"Token exchange response status: {response.status_code}")
             
             if response.status_code != 200:
                 logger.error(f"Token exchange failed: {response.status_code} - {response.text}")
-                raise InvalidCredentialsError(detail="Failed to exchange authorization code")
+                raise OAuthCodeExchangeError(detail="Failed to exchange authorization code. Please try logging in again.")
             
             token_data = response.json()
+            logger.info("Token exchange successful")
             return OAuthTokenResponse(**token_data)
     
     async def refresh_tokens(self, refresh_token: str) -> OAuthTokenResponse:
@@ -103,25 +117,35 @@ class AuthService:
         """
         token_url = f"{settings.PPOP_AUTH_API_URL}/oauth/token"
         
-        data = {
+        # 요청 데이터 구성
+        request_data = {
             "grant_type": "refresh_token",
             "refresh_token": refresh_token,
             "client_id": settings.PPOP_AUTH_CLIENT_ID,
             "client_secret": settings.PPOP_AUTH_CLIENT_SECRET
         }
         
+        # 디버깅: 요청 정보 로깅
+        logger.info(f"Token refresh request to: {token_url}")
+        logger.info(f"Request data: grant_type={request_data['grant_type']}, client_id={request_data['client_id']}")
+        
         async with httpx.AsyncClient() as client:
+            # JSON 형식으로 요청 (auth-server가 JSON을 기대함)
             response = await client.post(
                 token_url,
-                data=data,
-                headers={"Content-Type": "application/x-www-form-urlencoded"}
+                json=request_data,
+                headers={"Content-Type": "application/json"}
             )
+            
+            # 디버깅: 응답 정보 로깅
+            logger.info(f"Token refresh response status: {response.status_code}")
             
             if response.status_code != 200:
                 logger.error(f"Token refresh failed: {response.status_code} - {response.text}")
-                raise InvalidCredentialsError(detail="Failed to refresh token")
+                raise OAuthTokenRefreshError(detail="Failed to refresh token. Please log in again.")
             
             token_data = response.json()
+            logger.info("Token refresh successful")
             return OAuthTokenResponse(**token_data)
     
     async def get_or_create_user_from_token(self, access_token: str) -> User:

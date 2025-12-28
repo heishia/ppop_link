@@ -100,6 +100,23 @@ class FeatureNotAvailableError(PlanLimitError):
     detail = "This feature is not available for your plan"
 
 
+# OAuth 관련 예외
+class OAuthError(BaseAppException):
+    """OAuth 관련 오류 (인가 코드 교환 실패 등)"""
+    status_code = 400
+    detail = "OAuth error occurred"
+
+
+class OAuthCodeExchangeError(OAuthError):
+    """인가 코드를 토큰으로 교환 실패"""
+    detail = "Failed to exchange authorization code"
+
+
+class OAuthTokenRefreshError(OAuthError):
+    """토큰 갱신 실패"""
+    detail = "Failed to refresh token"
+
+
 # 파일 관련 예외
 class FileUploadError(BaseAppException):
     status_code = 400
