@@ -40,7 +40,7 @@ h6,
 h6 *,
 .font-heading,
 .font-heading * {
-  font-family: var(--font-cafe24-ssurround), sans-serif !important;
+  font-family: "Cafe24 Ssurround", sans-serif !important;
 }
 
 /* 작은 글씨 - 이서윤체 (본문, 버튼 등) */
