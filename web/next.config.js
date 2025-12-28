@@ -29,19 +29,29 @@ const nextConfig = {
 // Injected content via Sentry wizard below
 const { withSentryConfig } = require("@sentry/nextjs");
 
-module.exports = withSentryConfig(
-  nextConfig,
-  {
-    silent: true,
-    org: process.env.SENTRY_ORG,
-    project: process.env.SENTRY_PROJECT,
-  },
-  {
-    widenClientFileUpload: true,
-    transpileClientSDK: true,
-    tunnelRoute: "/monitoring",
-    hideSourceMaps: true,
-    disableLogger: true,
-  }
-);
+// Sentry 설정 - 환경 변수가 있을 때만 소스맵 업로드
+const sentryOrg = process.env.SENTRY_ORG;
+const sentryProject = process.env.SENTRY_PROJECT;
+
+// Sentry 환경 변수가 설정되어 있을 때만 Sentry 설정 적용
+if (sentryOrg && sentryProject) {
+  module.exports = withSentryConfig(
+    nextConfig,
+    {
+      silent: true,
+      org: sentryOrg,
+      project: sentryProject,
+    },
+    {
+      widenClientFileUpload: true,
+      transpileClientSDK: true,
+      tunnelRoute: "/monitoring",
+      hideSourceMaps: true,
+      disableLogger: true,
+    }
+  );
+} else {
+  // Sentry 환경 변수가 없으면 일반 Next.js 설정만 사용
+  module.exports = nextConfig;
+}
 
