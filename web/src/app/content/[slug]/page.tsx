@@ -131,7 +131,7 @@ export default function ContentDetailPage({ params }: ContentPageProps) {
     notFound();
   }
 
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://ppop.link";
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://ppoplink.site";
 
   return (
     <div className="min-h-screen bg-white">

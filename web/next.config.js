@@ -7,6 +7,7 @@ const nextConfig = {
   env: {
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
     NEXT_PUBLIC_PPOP_AUTH_CLIENT_ORIGIN: process.env.NEXT_PUBLIC_PPOP_AUTH_CLIENT_ORIGIN,
+    NEXT_PUBLIC_PPOP_AUTH_SERVICE_CODE: process.env.NEXT_PUBLIC_PPOP_AUTH_SERVICE_CODE,
   },
 
   // Image optimization

@@ -66,7 +66,7 @@ PPOP_AUTH_API_URL=https://auth-api.yourdomain.com
 PPOP_AUTH_CLIENT_URL=https://auth.yourdomain.com
 PPOP_AUTH_CLIENT_ID=your-client-id
 PPOP_AUTH_CLIENT_SECRET=your-client-secret
-PPOP_AUTH_REDIRECT_URI=https://ppop.link/auth/callback
+PPOP_AUTH_REDIRECT_URI=https://ppoplink.site/auth/callback
 PPOP_AUTH_JWKS_URI=https://auth-api.yourdomain.com/.well-known/jwks.json
 ```
 
@@ -75,7 +75,7 @@ PPOP_AUTH_JWKS_URI=https://auth-api.yourdomain.com/.well-known/jwks.json
 ```env
 DEBUG=false
 API_PREFIX=/api
-CORS_ORIGINS=https://ppop.link,https://ppoplink.site,https://www.ppop.link
+CORS_ORIGINS=https://ppoplink.site,https://www.ppoplink.site
 ```
 
 ---
@@ -110,6 +110,20 @@ SENTRY_DSN=your-sentry-dsn
 SENTRY_ENVIRONMENT=production
 ```
 
+### Frontend (Web) - Vercel 환경변수
+
+프론트엔드는 Vercel에 배포되므로 Vercel 대시보드에서 설정합니다:
+
+```env
+NEXT_PUBLIC_API_URL=https://api.ppoplink.site
+NEXT_PUBLIC_SITE_URL=https://ppoplink.site
+NEXT_PUBLIC_PPOP_AUTH_CLIENT_ORIGIN=https://auth-client-production-04b4.up.railway.app
+NEXT_PUBLIC_PPOP_AUTH_SERVICE_CODE=ppop-link
+NEXT_PUBLIC_SENTRY_DSN=your-sentry-dsn
+NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION=your-google-verification-code
+NEXT_PUBLIC_NAVER_SITE_VERIFICATION=your-naver-verification-code
+```
+
 ---
 
 ## 전체 환경변수 예시
@@ -132,14 +146,14 @@ PPOP_AUTH_API_URL=https://auth-api.yourdomain.com
 PPOP_AUTH_CLIENT_URL=https://auth.yourdomain.com
 PPOP_AUTH_CLIENT_ID=your-client-id
 PPOP_AUTH_CLIENT_SECRET=your-client-secret
-PPOP_AUTH_REDIRECT_URI=https://ppop.link/auth/callback
+PPOP_AUTH_REDIRECT_URI=https://ppoplink.site/auth/callback
 PPOP_AUTH_JWKS_URI=https://auth-api.yourdomain.com/.well-known/jwks.json
 PPOP_AUTH_CLIENT_ORIGIN=https://auth-client-production-04b4.up.railway.app
 
 # Server Configuration
 DEBUG=false
 API_PREFIX=/api
-CORS_ORIGINS=https://ppop.link,https://ppoplink.site,https://www.ppop.link
+CORS_ORIGINS=https://ppoplink.site,https://www.ppoplink.site
 
 # Storage (Supabase Storage)
 STORAGE_BUCKET_PROFILES=profiles
@@ -167,7 +181,7 @@ SENTRY_ENVIRONMENT=production
 - 쉼표로 구분된 도메인 목록
 - 프로토콜 포함 (http:// 또는 https://)
 - 공백 없이 입력
-- 예: `https://ppop.link,https://ppoplink.site`
+- 예: `https://ppoplink.site,https://www.ppoplink.site`
 
 ### 보안
 

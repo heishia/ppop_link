@@ -90,7 +90,7 @@ export const authApi = {
 
   // 구독 상태 조회 (백엔드 API를 통해 PPOP Auth 호출)
   getSubscriptionStatus: async (): Promise<SubscriptionStatus> => {
-    const SERVICE_CODE = "ppop-link";
+    const SERVICE_CODE = process.env.NEXT_PUBLIC_PPOP_AUTH_SERVICE_CODE || "ppop-link";
     const response = await apiClient.get<{ success: boolean; data: SubscriptionStatus }>(
       `/api/auth/subscription/${SERVICE_CODE}`
     );

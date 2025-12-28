@@ -199,8 +199,8 @@ gh run view <run-id>
 ```
 
 ### 배포 상태 확인
-- **Backend**: https://api.ppop.link/health
-- **Web**: https://ppop.link
+- **Backend**: https://api.ppoplink.site/health
+- **Web**: https://ppoplink.site
 - **Sentry**: https://sentry.io (Release 페이지)
 
 ## 문제 해결

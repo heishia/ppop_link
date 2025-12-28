@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   },
   description: "간단하고 예쁜 링크 바이오를 무료로 만들어보세요. 무제한 링크 추가, 커스터마이징, 분석 기능까지 모든 기능을 무료로 제공합니다.",
   keywords: ["뽑링크", "링크바이오", "링크인바이오", "링크트리", "바이오링크", "무료 링크바이오", "SNS 링크"],
-  authors: [{ name: "PPOP", url: "https://ppop.link" }],
+  authors: [{ name: "PPOP", url: "https://ppoplink.site" }],
   creator: "김뽑희",
   publisher: "PPOP",
   formatDetection: {
@@ -16,7 +16,7 @@ export const metadata: Metadata = {
     address: false,
     telephone: false,
   },
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://ppop.link"),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://ppoplink.site"),
   alternates: {
     canonical: "/",
   },
@@ -85,8 +85,8 @@ export default function RootLayout({
               "@context": "https://schema.org",
               "@type": "Organization",
               name: "PPOP",
-              url: process.env.NEXT_PUBLIC_SITE_URL || "https://ppop.link",
-              logo: `${process.env.NEXT_PUBLIC_SITE_URL || "https://ppop.link"}/screenshot.png`,
+              url: process.env.NEXT_PUBLIC_SITE_URL || "https://ppoplink.site",
+              logo: `${process.env.NEXT_PUBLIC_SITE_URL || "https://ppoplink.site"}/screenshot.png`,
               description: "링크를 모아주는 링크 바이오 서비스 뽑링크",
               founder: {
                 "@type": "Person",
@@ -103,13 +103,13 @@ export default function RootLayout({
               "@context": "https://schema.org",
               "@type": "WebSite",
               name: "뽑링크",
-              url: process.env.NEXT_PUBLIC_SITE_URL || "https://ppop.link",
+              url: process.env.NEXT_PUBLIC_SITE_URL || "https://ppoplink.site",
               description: "간단하고 예쁜 링크 바이오를 무료로 만들어보세요.",
               potentialAction: {
                 "@type": "SearchAction",
                 target: {
                   "@type": "EntryPoint",
-                  urlTemplate: `${process.env.NEXT_PUBLIC_SITE_URL || "https://ppop.link"}/search?q={search_term_string}`,
+                  urlTemplate: `${process.env.NEXT_PUBLIC_SITE_URL || "https://ppoplink.site"}/search?q={search_term_string}`,
                 },
                 "query-input": "required name=search_term_string",
               },
