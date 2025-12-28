@@ -70,7 +70,7 @@ interface ProfileState {
   syncSessionDataToServer: () => Promise<void>;
 }
 
-export const useProfileStore = create<ProfileState>((set) => ({
+export const useProfileStore = create<ProfileState>((set, get) => ({
   profile: null,
   isLoading: false,
   error: null,
@@ -205,9 +205,9 @@ export const useProfileStore = create<ProfileState>((set) => ({
     try {
       // 세션 스토리지의 프로필 데이터를 서버로 전송
       await get().updateProfile({
-        display_name: tempProfile.display_name,
-        bio: tempProfile.bio,
-        background_color: tempProfile.background_color,
+        display_name: tempProfile.display_name ?? undefined,
+        bio: tempProfile.bio ?? undefined,
+        background_color: tempProfile.background_color ?? undefined,
         button_style: tempProfile.button_style as ButtonStyle,
       });
       

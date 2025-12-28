@@ -76,7 +76,7 @@ interface LinksState {
   syncLinksDataToServer: () => Promise<void>;
 }
 
-export const useLinksStore = create<LinksState>((set) => ({
+export const useLinksStore = create<LinksState>((set, get) => ({
   links: [],
   socialLinks: [],
   isLoading: false,
@@ -304,8 +304,8 @@ export const useLinksStore = create<LinksState>((set) => ({
   },
   
   syncLinksDataToServer: async () => {
-    const tempLinks = get().links.filter((link) => link.id.startsWith("temp_"));
-    const tempSocialLinks = get().socialLinks.filter((link) => link.id.startsWith("temp_"));
+    const tempLinks = get().links.filter((link: Link) => link.id.startsWith("temp_"));
+    const tempSocialLinks = get().socialLinks.filter((link: SocialLink) => link.id.startsWith("temp_"));
     
     if (tempLinks.length === 0 && tempSocialLinks.length === 0) return;
     
