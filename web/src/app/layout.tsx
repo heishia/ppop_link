@@ -1,5 +1,13 @@
 import type { Metadata } from "next";
+import { Cafe24_Ssurround } from "next/font/google";
 import "./globals.css";
+
+const cafe24Ssurround = Cafe24_Ssurround({
+  weight: "400",
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-cafe24-ssurround",
+});
 
 export const metadata: Metadata = {
   title: {
@@ -67,12 +75,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ko">
+    <html lang="ko" className={cafe24Ssurround.variable}>
       <head>
-        <link
-          href="https://fonts.googleapis.com/css2?family=Cafe24+Ssurround&display=swap"
-          rel="stylesheet"
-        />
         {/* 네이버 검색 최적화 */}
         <meta name="robots" content="index, follow" />
         <meta name="Yeti" content="index, follow" />

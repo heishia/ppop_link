@@ -40,10 +40,11 @@ export default function AnalyticsPage() {
           const data = await analyticsApi.getAnalytics();
           setAnalytics(data);
           setError(null);
-        } catch (err: any) {
+        } catch (err: unknown) {
           console.error("Failed to fetch analytics:", err);
           // 백엔드에서 PRO 권한 체크 실패 시 에러 메시지 표시
-          if (err?.response?.status === 403 || err?.response?.data?.detail?.includes("PRO")) {
+          const error = err as { response?: { status?: number; data?: { detail?: string } } };
+          if (error?.response?.status === 403 || error?.response?.data?.detail?.includes("PRO")) {
             setError("Analytics feature is available for PRO plan only. Please upgrade to PRO.");
           } else {
             setError("Failed to load analytics data");

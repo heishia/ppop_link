@@ -8,6 +8,7 @@ import { Link, SocialLink } from "@/lib/api/links";
 import { User, ButtonStyle } from "@/lib/api/auth";
 import { DEFAULT_BACKGROUND_COLOR } from "@/lib/constants/colors";
 import { X } from "lucide-react";
+import { useAuthStore } from "@/store/authStore";
 
 // 버튼 스타일별 클래스 정의 (미리보기용)
 const BUTTON_STYLE_CLASSES: Record<ButtonStyle, string> = {
@@ -31,9 +32,9 @@ interface LinkPreviewProps {
 }
 
 // 미리보기 전용 컴포넌트 - 대시보드에서 실제 링크 페이지가 어떻게 보일지 표시
-export function LinkPreview({ profile, links, socialLinks, buttonStyle, onShareLinkClick }: LinkPreviewProps) {
+export function LinkPreview({ profile, links, socialLinks, buttonStyle }: LinkPreviewProps) {
   const router = useRouter();
-  const { isAuthenticated, startOAuthLogin, subscription } = useAuthStore();
+  const { subscription } = useAuthStore();
   
   // PRO 사용자 여부 확인
   const isProUser = subscription?.plan === "PRO" && subscription?.status === "ACTIVE" && subscription?.hasAccess;
@@ -53,20 +54,6 @@ export function LinkPreview({ profile, links, socialLinks, buttonStyle, onShareL
   // X 버튼 클릭 시 결제 페이지로 이동
   const handleRemoveWatermark = () => {
     router.push("/dashboard/pricing");
-  };
-
-  // 공유 링크 보기 버튼 클릭 핸들러
-  const handleShareLinkClick = async () => {
-    if (!isAuthenticated) {
-      // 비로그인 상태면 로그인 페이지로 이동
-      await startOAuthLogin();
-      return;
-    }
-    
-    // 로그인 상태면 공유 링크 발급 콜백 호출
-    if (onShareLinkClick) {
-      onShareLinkClick();
-    }
   };
 
   return (
