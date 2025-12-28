@@ -30,8 +30,6 @@ function parseApiError(error: unknown, fallbackMessage: string): string {
 // OAuth state 저장/검증을 위한 키
 const OAUTH_STATE_KEY = "oauth_state";
 
-import { SubscriptionStatus } from "@/lib/api/auth";
-
 interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
