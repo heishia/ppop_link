@@ -6,7 +6,7 @@ INSERT INTO users (id, username, email, password_hash, display_name, is_admin, i
 VALUES (
     'a0000000-0000-0000-0000-000000000001',
     'admin',
-    'admin@ppoplink.com',
+    'admin@ppoplink.site',
     '$2b$12$etZp1hYuN5HJbwodDtv0duW8KcBw2n/JW2OpmIJ.mooM97dKAzOV.',
     'Administrator',
     TRUE,

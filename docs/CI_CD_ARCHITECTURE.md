@@ -226,7 +226,7 @@ backend/tests/
   "workflow": "Backend Production Deployment",
   "status": "success",
   "environment": "production",
-  "url": "https://api.ppoplink.com",
+  "url": "https://api.ppoplink.site",
   "branch": "main",
   "commit": "abc123",
   "author": "developer"

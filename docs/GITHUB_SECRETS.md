@@ -63,8 +63,8 @@ This document lists all required GitHub Secrets for the CI/CD pipeline.
 
 | Secret Name | Description | Example Value |
 |-------------|-------------|---------------|
-| `NEXT_PUBLIC_API_URL` | Production API URL | `https://api.ppoplink.com` |
-| `PROD_NEXT_PUBLIC_API_URL` | Same as above (for release workflow) | `https://api.ppoplink.com` |
+| `NEXT_PUBLIC_API_URL` | Production API URL | `https://api.ppoplink.site` |
+| `PROD_NEXT_PUBLIC_API_URL` | Same as above (for release workflow) | `https://api.ppoplink.site` |
 
 ### Test Environment
 

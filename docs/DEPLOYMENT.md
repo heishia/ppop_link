@@ -30,7 +30,7 @@ In Vercel Project Settings → Environment Variables, add:
 
 **Production:**
 ```
-NEXT_PUBLIC_API_URL=https://api.ppoplink.com
+NEXT_PUBLIC_API_URL=https://api.ppoplink.site
 NEXT_PUBLIC_PPOP_AUTH_CLIENT_ORIGIN=https://auth-client-production-04b4.up.railway.app
 NEXT_PUBLIC_SENTRY_DSN=your-sentry-dsn
 SENTRY_ORG=your-sentry-org
@@ -40,7 +40,7 @@ SENTRY_AUTH_TOKEN=your-sentry-auth-token
 
 **Preview:**
 ```
-NEXT_PUBLIC_API_URL=https://staging-api.ppoplink.com
+NEXT_PUBLIC_API_URL=https://staging-api.ppoplink.site
 NEXT_PUBLIC_PPOP_AUTH_CLIENT_ORIGIN=https://auth-client-staging-xxxx.up.railway.app
 NEXT_PUBLIC_SENTRY_DSN=your-sentry-dsn
 SENTRY_ORG=your-sentry-org
@@ -90,7 +90,7 @@ JWT_ACCESS_TOKEN_EXPIRE_MINUTES=30
 JWT_REFRESH_TOKEN_EXPIRE_DAYS=7
 DEBUG=false
 API_PREFIX=/api
-CORS_ORIGINS=https://ppoplink.com,https://www.ppoplink.com
+CORS_ORIGINS=https://ppoplink.site,https://www.ppoplink.site
 STORAGE_BUCKET_PROFILES=profiles
 STORAGE_BUCKET_BACKGROUNDS=backgrounds
 MAX_FILE_SIZE_MB=5
@@ -101,13 +101,13 @@ SENTRY_RELEASE=$RAILWAY_GIT_COMMIT_SHA
 
 3. Add Custom Domain:
    - Settings → Networking → Custom Domain
-   - Add: `api.ppoplink.com`
+   - Add: `api.ppoplink.site`
 
 ### 2.3 Create Staging Environment
 
 Repeat steps above for staging:
 - Service Name: `ppoplink-backend-staging`
-- Domain: `staging-api.ppoplink.com`
+- Domain: `staging-api.ppoplink.site`
 - Environment: `staging`
 
 ### 2.4 Get Railway Token
@@ -302,7 +302,7 @@ railway up --service backend --tag v1.0.0
 
 ### 8.1 Health Checks
 
-- **Backend**: https://api.ppoplink.com/health
+- **Backend**: https://api.ppoplink.site/health
 - **Web**: Check Vercel deployment status
 
 ### 8.2 Error Tracking

@@ -432,4 +432,4 @@ MIT
 
 - Documentation: [docs/](docs/)
 - Issues: [GitHub Issues](https://github.com/your-org/ppoplink/issues)
-- Email: support@ppoplink.com
+- Email: support@ppoplink.site
