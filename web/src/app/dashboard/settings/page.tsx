@@ -182,7 +182,7 @@ export default function SettingsPage() {
       setIsDirty(false);
       
       setSaveMessage({ type: "success", text: "Settings saved successfully!" });
-    } catch (err) {
+    } catch {
       setSaveMessage({ type: "error", text: "Failed to save settings. Please try again." });
     } finally {
       setIsSaving(false);
@@ -197,7 +197,7 @@ export default function SettingsPage() {
     try {
       await uploadProfileImage(file);
       setSaveMessage({ type: "success", text: "Profile image updated!" });
-    } catch (err) {
+    } catch {
       setSaveMessage({ type: "error", text: "Failed to upload image. Please try again." });
     }
   };

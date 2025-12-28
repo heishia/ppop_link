@@ -176,7 +176,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       
       // 구독 상태도 함께 로드
       await get().loadSubscription();
-    } catch (error) {
+    } catch {
       // 토큰이 유효하지 않으면 정리
       localStorage.removeItem("access_token");
       localStorage.removeItem("refresh_token");

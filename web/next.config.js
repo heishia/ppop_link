@@ -19,11 +19,6 @@ const nextConfig = {
       },
     ],
   },
-
-  // Sentry configuration
-  sentry: {
-    hideSourceMaps: true,
-  },
 }
 
 // Injected content via Sentry wizard below

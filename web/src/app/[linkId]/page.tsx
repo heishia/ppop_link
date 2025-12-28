@@ -49,7 +49,7 @@ export async function generateMetadata({ params }: PageProps) {
           : undefined,
       },
     };
-  } catch (error) {
+  } catch {
     return {
       title: "profile not found | PPOPLINK",
     };
