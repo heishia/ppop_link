@@ -1,7 +1,5 @@
 [build]
-builder = "dockerfile"
-dockerfilePath = "./Dockerfile"
-watchPatterns = ["src/**", "public/**", "package.json", "Dockerfile"]
+builder = "railpack"
 
 [deploy]
 healthcheckPath = "/"
