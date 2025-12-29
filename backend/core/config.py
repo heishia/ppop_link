@@ -73,7 +73,8 @@ class Settings(BaseSettings):
         return self.APP_ENV == "prod"
     
     model_config = SettingsConfigDict(
-        env_file=".env.dev" if os.getenv("APP_ENV", "dev") == "dev" else ".env.prod",
+        # 개발: .env.local, 프로덕션: .env (또는 환경변수)
+        env_file=".env.local" if os.getenv("APP_ENV", "dev") == "dev" else ".env",
         env_file_encoding="utf-8",
         case_sensitive=True,
         extra="ignore"

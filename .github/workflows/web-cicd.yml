@@ -6,13 +6,13 @@ on:
       - main
       - dev
     paths:
-      - 'apps/web/**'
+      - 'web/**'
       - '.github/workflows/web-cicd.yml'
   pull_request:
     branches:
       - main
     paths:
-      - 'apps/web/**'
+      - 'web/**'
   workflow_dispatch:
     inputs:
       environment:
@@ -26,7 +26,7 @@ on:
 
 env:
   NODE_VERSION: '20'
-  WORKING_DIR: apps/web
+  WORKING_DIR: web
 
 jobs:
   # Changed files detection
@@ -42,7 +42,7 @@ jobs:
         with:
           filters: |
             web:
-              - 'apps/web/**'
+              - 'web/**'
 
   # Lint and format check
   lint:
@@ -126,76 +126,30 @@ jobs:
           flags: frontend
           fail_ci_if_error: false
 
-  # Build
-  build:
-    needs: [lint, type-check, test]
-    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ${{ env.WORKING_DIR }}
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-          cache-dependency-path: ${{ env.WORKING_DIR }}/package-lock.json
-      
-      - name: Install dependencies
-        run: npm ci
-      
-      - name: Build application
-        env:
-          NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
-          NEXT_PUBLIC_SENTRY_DSN: ${{ secrets.NEXT_PUBLIC_SENTRY_DSN }}
-        run: npm run build
-      
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: web-build
-          path: ${{ env.WORKING_DIR }}/.next
-          retention-days: 1
-
-  # Deploy to Vercel (Preview)
+  # Deploy to Railway (Preview - dev branch)
   deploy-preview:
-    needs: build
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    needs: [lint, type-check, test]
+    if: github.ref == 'refs/heads/dev' && github.event_name == 'push'
     runs-on: ubuntu-latest
     environment:
       name: preview
-      url: ${{ steps.deploy.outputs.preview-url }}
     steps:
       - uses: actions/checkout@v4
       
-      - name: Deploy to Vercel (Preview)
-        id: deploy
-        uses: amondnet/vercel-action@v25
-        with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          working-directory: ${{ env.WORKING_DIR }}
-          scope: ${{ secrets.VERCEL_ORG_ID }}
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
       
-      - name: Comment PR with preview URL
-        if: github.event_name == 'pull_request'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: `Preview deployed to: ${{ steps.deploy.outputs.preview-url }}`
-            })
+      - name: Deploy to Railway (Preview)
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: |
+          cd web
+          railway up --service ppoplink-web-preview
       
       - name: Notify Slack
         if: always()
         uses: slackapi/slack-github-action@v1
+        continue-on-error: true
         with:
           webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
           payload: |
@@ -206,52 +160,56 @@ jobs:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "*Web Preview Deployment*\nStatus: ${{ job.status }}\nBranch: ${{ github.ref_name }}\nURL: ${{ steps.deploy.outputs.preview-url }}\nAuthor: ${{ github.actor }}"
+                    "text": "*Web Preview Deployment*\nStatus: ${{ job.status }}\nBranch: ${{ github.ref_name }}\nAuthor: ${{ github.actor }}"
                   }
                 }
               ]
             }
 
-  # E2E tests on staging
-  e2e-test:
-    needs: deploy-preview
-    if: github.ref == 'refs/heads/main'
+  # Deploy to Railway (Production - main branch)
+  deploy-production:
+    needs: [lint, type-check, test]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ${{ env.WORKING_DIR }}
+    environment:
+      name: production
+      url: https://ppoplink.site
     steps:
       - uses: actions/checkout@v4
       
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-          cache-dependency-path: ${{ env.WORKING_DIR }}/package-lock.json
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
       
-      - name: Install dependencies
-        run: npm ci
-      
-      - name: Install Playwright browsers
-        run: npx playwright install --with-deps
-      
-      - name: Run E2E tests
+      - name: Deploy to Railway (Production)
         env:
-          PLAYWRIGHT_TEST_BASE_URL: ${{ needs.deploy-preview.outputs.preview-url }}
-        run: npx playwright test || true
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: |
+          cd web
+          railway up --service ppoplink-web
       
-      - name: Upload test results
+      - name: Notify Slack
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: slackapi/slack-github-action@v1
+        continue-on-error: true
         with:
-          name: playwright-report
-          path: ${{ env.WORKING_DIR }}/playwright-report
-          retention-days: 7
+          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
+          payload: |
+            {
+              "text": "Web Production Deployment ${{ job.status }}",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Web Production Deployment*\nStatus: ${{ job.status }}\nBranch: ${{ github.ref_name }}\nURL: https://ppoplink.site\nAuthor: ${{ github.actor }}"
+                  }
+                }
+              ]
+            }
 
   # Sentry release
   sentry-release:
-    needs: deploy-preview
+    needs: deploy-production
     if: success()
     runs-on: ubuntu-latest
     steps:
@@ -266,7 +224,5 @@ jobs:
           SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
           SENTRY_PROJECT: web
         with:
-          environment: preview
+          environment: production
           version: ${{ github.sha }}
-          sourcemaps: ${{ env.WORKING_DIR }}/.next
-

@@ -50,8 +50,8 @@ jobs:
             echo "web=true" >> $GITHUB_OUTPUT
             echo "backend=true" >> $GITHUB_OUTPUT
           else
-            WEB_CHANGED=$(git diff --name-only ${{ steps.prev-tag.outputs.prev-tag }} ${{ steps.tag.outputs.tag }} | grep -E '^apps/web/' || echo "")
-            BACKEND_CHANGED=$(git diff --name-only ${{ steps.prev-tag.outputs.prev-tag }} ${{ steps.tag.outputs.tag }} | grep -E '^(server/|database/|requirements.txt|Dockerfile)' || echo "")
+            WEB_CHANGED=$(git diff --name-only ${{ steps.prev-tag.outputs.prev-tag }} ${{ steps.tag.outputs.tag }} | grep -E '^web/' || echo "")
+            BACKEND_CHANGED=$(git diff --name-only ${{ steps.prev-tag.outputs.prev-tag }} ${{ steps.tag.outputs.tag }} | grep -E '^(backend/|database/|requirements.txt|Dockerfile)' || echo "")
             
             if [ -n "$WEB_CHANGED" ]; then
               echo "web=true" >> $GITHUB_OUTPUT
@@ -80,46 +80,25 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: production-backend
-      url: https://api.ppop.link
+      url: https://api.ppoplink.site
     steps:
       - uses: actions/checkout@v4
         with:
           ref: ${{ needs.detect-changes.outputs.release-tag }}
       
-      - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      
-      - name: Get Docker image tag
-        id: image
-        run: |
-          IMAGE_TAG="${{ env.REGISTRY }}/${{ github.repository }}/backend:${{ needs.detect-changes.outputs.release-tag }}"
-          echo "tag=$IMAGE_TAG" >> $GITHUB_OUTPUT
-      
-      - name: Pull and tag Docker image
-        run: |
-          docker pull ${{ env.REGISTRY }}/${{ github.repository }}/backend:main
-          docker tag ${{ env.REGISTRY }}/${{ github.repository }}/backend:main ${{ steps.image.outputs.tag }}
-          docker push ${{ steps.image.outputs.tag }}
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
       
       - name: Deploy to Railway (Production)
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-          RAILWAY_SERVICE: ${{ secrets.RAILWAY_SERVICE_PRODUCTION }}
-        run: |
-          echo "Deploying backend to Railway production"
-          curl -fsSL https://railway.app/install.sh | sh
-          railway link $RAILWAY_SERVICE
-          railway up --service backend
+        run: railway up --service ppoplink-backend
       
       - name: Health check
         run: |
           sleep 30
           for i in {1..5}; do
-            if curl -f https://api.ppop.link/health; then
+            if curl -f https://api.ppoplink.site/health; then
               echo "Health check passed"
               exit 0
             fi
@@ -142,6 +121,7 @@ jobs:
       - name: Notify Slack
         if: always()
         uses: slackapi/slack-github-action@v1
+        continue-on-error: true
         with:
           webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
           payload: |
@@ -152,7 +132,7 @@ jobs:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "*Backend Production Deployment*\nStatus: ${{ job.status }}\nRelease: ${{ needs.detect-changes.outputs.release-tag }}\nURL: https://api.ppop.link\nAuthor: ${{ github.actor }}"
+                    "text": "*Backend Production Deployment*\nStatus: ${{ job.status }}\nRelease: ${{ needs.detect-changes.outputs.release-tag }}\nURL: https://api.ppoplink.site\nAuthor: ${{ github.actor }}"
                   }
                 }
               ]
@@ -165,44 +145,21 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: production-web
-      url: https://ppop.link
-    defaults:
-      run:
-        working-directory: apps/web
+      url: https://ppoplink.site
     steps:
       - uses: actions/checkout@v4
         with:
           ref: ${{ needs.detect-changes.outputs.release-tag }}
       
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-          cache-dependency-path: apps/web/package-lock.json
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
       
-      - name: Install dependencies
-        run: npm ci
-      
-      - name: Build application
+      - name: Deploy to Railway (Production)
         env:
-          NEXT_PUBLIC_API_URL: ${{ secrets.PROD_NEXT_PUBLIC_API_URL }}
-          NEXT_PUBLIC_SENTRY_DSN: ${{ secrets.NEXT_PUBLIC_SENTRY_DSN }}
-          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
-          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
-          SENTRY_PROJECT: web
-        run: npm run build
-      
-      - name: Deploy to Vercel (Production)
-        id: deploy
-        uses: amondnet/vercel-action@v25
-        with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          vercel-args: '--prod'
-          working-directory: apps/web
-          scope: ${{ secrets.VERCEL_ORG_ID }}
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: |
+          cd web
+          railway up --service ppoplink-web
       
       - name: Create Sentry release
         uses: getsentry/action-release@v1
@@ -213,11 +170,11 @@ jobs:
         with:
           environment: production
           version: ${{ needs.detect-changes.outputs.release-tag }}
-          sourcemaps: apps/web/.next
       
       - name: Notify Slack
         if: always()
         uses: slackapi/slack-github-action@v1
+        continue-on-error: true
         with:
           webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
           payload: |
@@ -228,7 +185,7 @@ jobs:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "*Web Production Deployment*\nStatus: ${{ job.status }}\nRelease: ${{ needs.detect-changes.outputs.release-tag }}\nURL: https://ppop.link\nAuthor: ${{ github.actor }}"
+                    "text": "*Web Production Deployment*\nStatus: ${{ job.status }}\nRelease: ${{ needs.detect-changes.outputs.release-tag }}\nURL: https://ppoplink.site\nAuthor: ${{ github.actor }}"
                   }
                 }
               ]
@@ -249,6 +206,7 @@ jobs:
       
       - name: Final Slack notification
         uses: slackapi/slack-github-action@v1
+        continue-on-error: true
         with:
           webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
           payload: |
@@ -264,4 +222,3 @@ jobs:
                 }
               ]
             }
-
