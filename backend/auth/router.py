@@ -15,8 +15,6 @@ from backend.auth.schemas import (
     UserResponse,
     MessageResponse,
     OAuthLoginURLResponse,
-    RegisterExtendedRequest,
-    RegisterExtendedResponse,
     SubscriptionStatusResponseSchema
 )
 from backend.auth.service import auth_service
@@ -120,21 +118,6 @@ async def logout(current_user: User = Depends(get_current_user)):
     클라이언트에서 토큰 삭제 처리
     """
     return MessageResponse(message="Logged out successfully")
-
-
-@router.post("/register/extended", response_model=RegisterExtendedResponse)
-async def register_extended(request: RegisterExtendedRequest):
-    """
-    확장 가입 처리 (전화번호 인증 후)
-    PPOP Auth 클라이언트에서 호출
-    현재는 기본 응답만 반환 (실제 전화번호 인증은 PPOP Auth에서 처리)
-    """
-    # PPOP Auth에서 이미 전화번호 인증을 처리했으므로
-    # 여기서는 성공 응답만 반환
-    return RegisterExtendedResponse(
-        success=True,
-        message="Registration extended successfully"
-    )
 
 
 @router.get("/subscription/{service_code}", response_model=SubscriptionStatusResponseSchema)

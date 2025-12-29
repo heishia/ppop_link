@@ -54,18 +54,6 @@ class OAuthLoginURLResponse(BaseModel):
     state: str
 
 
-class RegisterExtendedRequest(BaseModel):
-    """확장 가입 요청 (전화번호 인증 후)"""
-    phone: Optional[str] = None
-    verification_code: Optional[str] = None
-
-
-class RegisterExtendedResponse(BaseModel):
-    """확장 가입 응답"""
-    success: bool = True
-    message: str
-
-
 class SubscriptionStatusResponseSchema(BaseModel):
     """구독 상태 응답 스키마"""
     success: bool = True

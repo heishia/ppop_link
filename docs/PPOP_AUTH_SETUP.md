@@ -4,6 +4,27 @@
 
 PPOPLINK uses PPOP Auth for Single Sign-On (SSO) authentication. This document explains how to configure the integration.
 
+## Responsibility Separation
+
+### PPOP Auth Responsibilities
+- User registration and signup
+- User login and authentication
+- Email verification
+- Phone number verification (SMS)
+- Duplicate email/phone number validation
+- JWT token issuance
+- User credential management
+
+### PPOPLINK Responsibilities
+- JWT token verification (from PPOP Auth)
+- User information synchronization (from JWT to local DB)
+- Link management (CRUD operations)
+- Analytics and click tracking
+- Public profile display
+- Subscription status checking (via PPOP Auth API)
+
+**Important:** PPOPLINK does NOT handle any authentication, verification, or duplicate checking. All authentication logic is delegated to PPOP Auth.
+
 ## Environment Variables
 
 Add the following variables to your `.env.dev` or `.env.prod` file:
@@ -35,14 +56,17 @@ PPOP_AUTH_JWKS_URI=https://auth-api.yourdomain.com/.well-known/jwks.json
 1. User clicks "Sign in with PPOP" button
 2. Frontend requests login URL from backend (/api/auth/oauth/login)
 3. User is redirected to PPOP Auth login page
-4. User authenticates with PPOP Auth
-5. PPOP Auth redirects to callback URL with authorization code
-6. Frontend sends code to backend (/api/auth/oauth/callback)
-7. Backend exchanges code for tokens with PPOP Auth
-8. Backend verifies token using JWKS and creates/retrieves user
-9. Tokens and user info returned to frontend
-10. Frontend stores tokens and redirects to dashboard
+4. User authenticates with PPOP Auth (email/phone verification handled here)
+5. PPOP Auth validates credentials and checks for duplicates
+6. PPOP Auth redirects to callback URL with authorization code
+7. Frontend sends code to backend (/api/auth/oauth/callback)
+8. Backend exchanges code for tokens with PPOP Auth
+9. Backend verifies token using JWKS and syncs user info to local DB
+10. Tokens and user info returned to frontend
+11. Frontend stores tokens and redirects to dashboard
 ```
+
+**Note:** All authentication, verification, and duplicate checking happens in steps 4-5 at PPOP Auth. PPOPLINK only handles token verification and user data synchronization.
 
 ## API Endpoints
 

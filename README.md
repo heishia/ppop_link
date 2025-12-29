@@ -29,6 +29,7 @@ ppoplink/
 │   ├── links/            # Links & Social links
 │   ├── public/           # Public profile pages
 │   ├── admin/            # Admin dashboard
+│   ├── sms/              # SMS verification service
 │   ├── files/            # File upload service
 │   ├── core/             # Core configs, models, utils
 │   ├── tests/            # Test suite
@@ -263,6 +264,14 @@ See [docs/CI_CD_ARCHITECTURE.md](docs/CI_CD_ARCHITECTURE.md) for detailed archit
 | PUT | `/{id}` | Update social link |
 | DELETE | `/{id}` | Delete social link |
 
+### SMS (`/api/sms`)
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/send` | Send verification SMS |
+| POST | `/verify` | Verify SMS code |
+| POST | `/resend` | Resend verification SMS |
+
 ### Public (`/api/u`)
 
 | Method | Endpoint | Description |
@@ -338,6 +347,15 @@ MAX_FILE_SIZE_MB=5
 # Plan Limits
 FREE_MAX_LINKS=5
 FREE_MAX_SOCIAL_LINKS=3
+
+# SMS Verification (Naver Cloud Platform SENS)
+NCP_SENS_API_URL=https://sens.apigw.ntruss.com
+NCP_SENS_SERVICE_ID=your-service-id
+NCP_SENS_ACCESS_KEY=your-access-key
+NCP_SENS_SECRET_KEY=your-secret-key
+NCP_SENS_FROM_NUMBER=01012345678
+SMS_CODE_EXPIRY_MINUTES=3
+SMS_CODE_LENGTH=6
 
 # Logging
 LOG_LEVEL=INFO                 # DEBUG, INFO, WARNING, ERROR
