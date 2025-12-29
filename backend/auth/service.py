@@ -16,6 +16,8 @@ from backend.core.exceptions import (
     InvalidCredentialsError,
     UserNotFoundError,
     UsernameAlreadyExistsError,
+    EmailAlreadyExistsError,
+    PhoneAlreadyExistsError,
     DatabaseError,
     ServiceNotFoundError,
     SubscriptionError,
@@ -162,6 +164,7 @@ class AuthService:
         payload = get_token_payload(access_token)
         ppop_user_id = payload.get("sub")
         email = payload.get("email")
+        phone_number = payload.get("phone_number")  # PPOP Auth에서 인증된 전화번호
         
         if not ppop_user_id:
             raise InvalidCredentialsError(detail="Invalid token: missing user ID")
@@ -172,18 +175,48 @@ class AuthService:
         if user:
             return user
         
+        # 신규 사용자 생성 전 중복 체크
+        await self._check_duplicate_email_and_phone(email, phone_number)
+        
         # 신규 사용자 생성
         logger.info(f"Creating new user from PPOP Auth: {ppop_user_id}")
-        user = await self._create_user_from_ppop(UUID(ppop_user_id), email)
+        user = await self._create_user_from_ppop(UUID(ppop_user_id), email, phone_number)
         return user
     
-    async def _create_user_from_ppop(self, ppop_user_id: UUID, email: Optional[str]) -> User:
+    async def _check_duplicate_email_and_phone(self, email: Optional[str], phone_number: Optional[str]) -> None:
+        """
+        이메일과 전화번호 중복 체크
+        
+        Args:
+            email: 사용자 이메일
+            phone_number: 사용자 전화번호 (PPOP Auth에서 인증된 번호)
+            
+        Raises:
+            EmailAlreadyExistsError: 이메일이 이미 등록됨
+            PhoneAlreadyExistsError: 전화번호가 이미 등록됨
+        """
+        # 이메일 중복 체크
+        if email:
+            result = db.table(self.TABLE_USERS).select("id").eq("email", email).execute()
+            if result.data:
+                logger.warning(f"Duplicate email registration attempt: {email}")
+                raise EmailAlreadyExistsError(detail="이미 가입된 이메일입니다. 다른 이메일을 사용해주세요.")
+        
+        # 전화번호 중복 체크 (인증된 전화번호만)
+        if phone_number:
+            result = db.table(self.TABLE_USERS).select("id").eq("phone_number", phone_number).execute()
+            if result.data:
+                logger.warning(f"Duplicate phone number registration attempt: {phone_number}")
+                raise PhoneAlreadyExistsError(detail="이미 가입된 전화번호입니다. 다른 전화번호를 사용해주세요.")
+    
+    async def _create_user_from_ppop(self, ppop_user_id: UUID, email: Optional[str], phone_number: Optional[str] = None) -> User:
         """
         PPOP Auth 사용자 정보로 새 사용자 생성
         
         Args:
             ppop_user_id: PPOP Auth user_id (UUID)
             email: 사용자 이메일
+            phone_number: 사용자 전화번호 (PPOP Auth에서 인증된 번호)
             
         Returns:
             User: 생성된 사용자
@@ -201,6 +234,7 @@ class AuthService:
             "id": str(ppop_user_id),  # PPOP Auth의 user_id를 그대로 사용
             "username": username,
             "email": email or f"{ppop_user_id}@ppop.auth",  # 이메일이 없으면 임시 이메일
+            "phone_number": phone_number,  # PPOP Auth에서 인증된 전화번호
             "password_hash": None,  # PPOP Auth 사용자는 비밀번호 없음
             "display_name": username,
             "theme": "default",
@@ -495,6 +529,7 @@ class AuthService:
             public_link_id=data.get("public_link_id"),
             username=data["username"],
             email=data["email"],
+            phone_number=data.get("phone_number"),
             display_name=data.get("display_name"),
             bio=data.get("bio"),
             profile_image_url=data.get("profile_image_url"),

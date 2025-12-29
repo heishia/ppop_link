@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS users (
     public_link_id VARCHAR(20) UNIQUE,            -- 암호화된 공개 링크 ID
     username VARCHAR(50) UNIQUE NOT NULL,
     email VARCHAR(255) UNIQUE NOT NULL,
+    phone_number VARCHAR(20) UNIQUE,              -- 인증된 전화번호 (PPOP Auth에서 검증됨, E.164 형식)
     password_hash VARCHAR(255) NOT NULL,
     display_name VARCHAR(100),
     bio VARCHAR(500),
@@ -64,6 +65,7 @@ CREATE TABLE IF NOT EXISTS social_links (
 -- Indexes
 CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+CREATE INDEX IF NOT EXISTS idx_users_phone_number ON users(phone_number);
 CREATE INDEX IF NOT EXISTS idx_users_is_active ON users(is_active);
 CREATE INDEX IF NOT EXISTS idx_users_public_link_id ON users(public_link_id);
 CREATE INDEX IF NOT EXISTS idx_users_user_seq ON users(user_seq);

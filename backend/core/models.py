@@ -58,6 +58,7 @@ class TimestampMixin(BaseModel):
 class UserBase(BaseModel):
     username: str = Field(..., min_length=3, max_length=50, pattern=r"^[a-zA-Z0-9_]+$")
     email: EmailStr
+    phone_number: Optional[str] = Field(None, max_length=20)
     display_name: Optional[str] = Field(None, max_length=100)
     bio: Optional[str] = Field(None, max_length=500)
 
@@ -86,6 +87,7 @@ class User(UserBase, TimestampMixin):
     id: UUID
     user_seq: Optional[int] = None                # 순차 번호 (링크 ID 생성용)
     public_link_id: Optional[str] = None          # 암호화된 공개 링크 ID
+    phone_number: Optional[str] = None            # 인증된 전화번호 (PPOP Auth에서 검증됨)
     profile_image_url: Optional[str] = None
     background_image_url: Optional[str] = None
     background_color: Optional[str] = None

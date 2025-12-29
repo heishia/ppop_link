@@ -82,6 +82,10 @@ class EmailAlreadyExistsError(DuplicateError):
     detail = "Email already registered"
 
 
+class PhoneAlreadyExistsError(DuplicateError):
+    detail = "Phone number already registered"
+
+
 # 플랜 제한 예외
 class PlanLimitError(BaseAppException):
     status_code = 403
