@@ -19,6 +19,7 @@ from backend.links.router import router as links_router, social_router
 from backend.public.router import router as public_router
 from backend.admin.router import router as admin_router
 from backend.analytics.router import router as analytics_router
+from backend.content.router import router as content_router
 
 
 def create_app() -> FastAPI:
@@ -140,6 +141,13 @@ def setup_routers(app: FastAPI) -> None:
         analytics_router,
         prefix=f"{settings.API_PREFIX}/analytics",
         tags=["Analytics"]
+    )
+    
+    # 컨텐츠 (공개 API, 관리는 관리자 권한 필요)
+    app.include_router(
+        content_router,
+        prefix=f"{settings.API_PREFIX}/content",
+        tags=["Content"]
     )
     
     @app.get("/health")
