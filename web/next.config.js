@@ -19,6 +19,23 @@ const nextConfig = {
       },
     ],
   },
+
+  // Redirects - www → non-www (단일 URL 정책)
+  async redirects() {
+    return [
+      {
+        source: '/:path*',
+        has: [
+          {
+            type: 'host',
+            value: 'www.ppoplink.site',
+          },
+        ],
+        destination: 'https://ppoplink.site/:path*',
+        permanent: true, // 301 redirect
+      },
+    ];
+  },
 }
 
 // Injected content via Sentry wizard below

@@ -1,5 +1,14 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "404 - 페이지를 찾을 수 없습니다",
+  robots: {
+    index: false, // 404 페이지는 검색 결과에 노출하지 않음
+    follow: false,
+  },
+};
 
 export default function NotFound() {
   return (

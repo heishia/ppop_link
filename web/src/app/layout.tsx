@@ -69,6 +69,8 @@ export default function RootLayout({
   return (
     <html lang="ko">
       <head>
+        {/* 모바일 최적화 */}
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
         {/* eslint-disable-next-line @next/next/no-page-custom-font */}
         <link
           href="https://fonts.googleapis.com/css2?family=Cafe24+Ssurround&display=swap"
