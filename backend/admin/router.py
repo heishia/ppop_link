@@ -13,6 +13,7 @@ from backend.admin.schemas import (
     UserListResponse,
     StatsResponse,
     PlanUpdateRequest,
+    AdminStatusUpdateRequest,
     UserResponse
 )
 from backend.admin.service import admin_service
@@ -55,5 +56,20 @@ async def update_user_plan(
     admin: User = Depends(get_admin_user)
 ):
     user = await admin_service.update_user_plan(user_id, request.plan_type)
+    return UserResponse(data=user)
+
+
+@router.put("/users/{user_id}/admin", response_model=UserResponse)
+async def update_admin_status(
+    user_id: UUID,
+    request: AdminStatusUpdateRequest,
+    admin: User = Depends(get_admin_user)
+):
+    """
+    사용자의 관리자 권한 설정
+    
+    Note: 슈퍼 관리자만 다른 사용자의 관리자 권한을 변경할 수 있습니다.
+    """
+    user = await admin_service.update_admin_status(user_id, request.is_admin)
     return UserResponse(data=user)
 

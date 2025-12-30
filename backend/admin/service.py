@@ -132,6 +132,46 @@ class AdminService:
         logger.info(f"User plan updated: user_id={user_id}, plan={plan_type}")
         return UserWithPlan(**user.model_dump(), plan=new_plan)
     
+    async def update_admin_status(
+        self,
+        user_id: UUID,
+        is_admin: bool
+    ) -> UserWithPlan:
+        """
+        사용자의 관리자 권한 설정
+        
+        Args:
+            user_id: 사용자 ID
+            is_admin: 관리자 권한 여부
+            
+        Returns:
+            UserWithPlan: 업데이트된 사용자 정보
+        """
+        # 사용자 확인
+        user_result = db.table(self.TABLE_USERS).select("*").eq(
+            "id", str(user_id)
+        ).execute()
+        
+        if not user_result.data:
+            raise UserNotFoundError()
+        
+        # 관리자 권한 업데이트
+        db.table(self.TABLE_USERS).update({
+            "is_admin": is_admin,
+            "updated_at": datetime.utcnow().isoformat()
+        }).eq("id", str(user_id)).execute()
+        
+        # 업데이트된 사용자 정보 조회
+        updated_result = db.table(self.TABLE_USERS).select("*").eq(
+            "id", str(user_id)
+        ).execute()
+        
+        user = self._map_to_user(updated_result.data[0])
+        plan = await self._get_user_plan(user_id)
+        
+        logger.info(f"User admin status updated: user_id={user_id}, is_admin={is_admin}")
+        return UserWithPlan(**user.model_dump(), plan=plan)
+    
     async def _get_user_plan(self, user_id: UUID) -> Optional[UserPlan]:
         result = db.table(self.TABLE_USER_PLANS).select("*").eq(
             "user_id", str(user_id)

@@ -1,8 +1,13 @@
-import type { Metadata } from "next";
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { MainHeader } from "@/components/layout/MainHeader";
+import { Button } from "@/components/ui/Button";
+import { Plus } from "lucide-react";
+import { useAuthStore } from "@/store/authStore";
 
-export const metadata: Metadata = {
+const metadata = {
   title: "컨텐츠 - 뽑링크 프로그램 소개 및 정보",
   description: "뽑링크 프로그램 소개, 사용 가이드, 팁과 노하우 등 다양한 컨텐츠를 확인하세요. 링크 바이오를 더 효과적으로 활용하는 방법을 알아보세요.",
   keywords: "뽑링크, 컨텐츠, 프로그램 소개, 링크바이오 가이드, 링크인바이오 활용법, 마케팅 팁",
@@ -46,13 +51,42 @@ const contentItems: ContentItem[] = [
 ];
 
 export default function ContentPage() {
+  const { user, isAuthenticated, loadUser } = useAuthStore();
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const init = async () => {
+      await loadUser();
+      setIsLoading(false);
+    };
+    init();
+  }, [loadUser]);
+
+  // 관리자 권한 확인
+  const isAdmin = isAuthenticated && user?.is_admin === true;
+
   return (
     <div className="min-h-screen bg-white">
       <MainHeader />
       <div className="mx-auto max-w-4xl px-4 py-12 sm:py-20">
-        <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
-          컨텐츠
-        </h1>
+        <div className="flex items-center justify-between mb-4">
+          <h1 className="text-3xl sm:text-4xl font-bold text-gray-900">
+            컨텐츠
+          </h1>
+          {isAdmin && (
+            <Button
+              variant="primary"
+              onClick={() => {
+                // TODO: 컨텐츠 추가 모달 또는 페이지로 이동
+                alert("컨텐츠 추가 기능은 곧 추가됩니다!");
+              }}
+              className="flex items-center gap-2"
+            >
+              <Plus className="w-4 h-4" />
+              컨텐츠 추가
+            </Button>
+          )}
+        </div>
         <p className="text-gray-600 mb-8">
           뽑링크 프로그램 소개, 사용 가이드, 팁과 노하우 등 다양한 컨텐츠를 확인하세요.
         </p>

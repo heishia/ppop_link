@@ -25,6 +25,10 @@ class PlanUpdateRequest(BaseModel):
     plan_type: PlanType
 
 
+class AdminStatusUpdateRequest(BaseModel):
+    is_admin: bool
+
+
 class UserResponse(BaseModel):
     success: bool = True
     data: UserWithPlan
