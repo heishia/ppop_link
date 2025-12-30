@@ -6,8 +6,17 @@ export const metadata: Metadata = {
     default: "뽑링크 - 링크를 모아주는 링크 바이오 서비스",
     template: "%s | 뽑링크",
   },
-  description: "간단하고 예쁜 링크 바이오를 무료로 만들어보세요. 무제한 링크 추가, 커스터마이징, 분석 기능까지 모든 기능을 무료로 제공합니다.",
-  keywords: ["뽑링크", "링크바이오", "링크인바이오", "링크트리", "바이오링크", "무료 링크바이오", "SNS 링크"],
+  description:
+    "간단하고 예쁜 링크 바이오를 무료로 만들어보세요. 무제한 링크 추가, 커스터마이징, 분석 기능까지 모든 기능을 무료로 제공합니다.",
+  keywords: [
+    "뽑링크",
+    "링크바이오",
+    "링크인바이오",
+    "링크트리",
+    "바이오링크",
+    "무료 링크바이오",
+    "SNS 링크",
+  ],
   authors: [{ name: "PPOP", url: "https://ppoplink.site" }],
   creator: "김뽑희",
   publisher: "PPOP",
@@ -16,7 +25,9 @@ export const metadata: Metadata = {
     address: false,
     telephone: false,
   },
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://ppoplink.site"),
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL || "https://ppoplink.site"
+  ),
   alternates: {
     canonical: "/",
   },
@@ -56,13 +67,14 @@ export const metadata: Metadata = {
   verification: {
     google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION,
     other: {
-      "naver-site-verification": process.env.NEXT_PUBLIC_NAVER_SITE_VERIFICATION || "",
+      "naver-site-verification":
+        process.env.NEXT_PUBLIC_NAVER_SITE_VERIFICATION || "",
     },
   },
   icons: {
-    icon: '/favicon.ico',
-    shortcut: '/favicon.ico',
-    apple: '/favicon.ico',
+    icon: "/favicon.ico",
+    shortcut: "/favicon.ico",
+    apple: "/favicon.ico",
   },
 };
 
@@ -75,7 +87,10 @@ export default function RootLayout({
     <html lang="ko">
       <head>
         {/* 모바일 최적화 */}
-        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+        <meta
+          name="viewport"
+          content="width=device-width, initial-scale=1, maximum-scale=5"
+        />
         {/* eslint-disable-next-line @next/next/no-page-custom-font */}
         <link
           href="https://fonts.googleapis.com/css2?family=Cafe24+Ssurround&display=swap"
@@ -84,7 +99,10 @@ export default function RootLayout({
         {/* 네이버 검색 최적화 */}
         <meta name="robots" content="index, follow" />
         <meta name="Yeti" content="index, follow" />
-        <meta name="naver-site-verification" content={process.env.NEXT_PUBLIC_NAVER_SITE_VERIFICATION || ""} />
+        <meta
+          name="naver-site-verification"
+          content={process.env.NEXT_PUBLIC_NAVER_SITE_VERIFICATION || ""}
+        />
         {/* 구조화된 데이터 - Organization */}
         <script
           type="application/ld+json"
@@ -125,10 +143,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body>
-        {children}
-      </body>
+      <body>{children}</body>
     </html>
   );
 }
-
