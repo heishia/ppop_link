@@ -148,6 +148,20 @@ export const useLinksStore = create<LinksState>((set, get) => ({
   },
 
   updateLink: async (linkId, data) => {
+    const { isAuthenticated } = useAuthStore.getState();
+    
+    // 비로그인 상태면 로컬 상태만 업데이트
+    if (!isAuthenticated) {
+      set((state) => ({
+        links: state.links.map((link) =>
+          link.id === linkId ? { ...link, ...data } : link
+        ),
+      }));
+      get().saveLinksToSessionStorage();
+      return;
+    }
+    
+    // 로그인 상태면 서버에 저장
     try {
       const response = await linksApi.updateLink(linkId, data);
       set((state) => ({
@@ -164,6 +178,18 @@ export const useLinksStore = create<LinksState>((set, get) => ({
   },
 
   deleteLink: async (linkId) => {
+    const { isAuthenticated } = useAuthStore.getState();
+    
+    // 비로그인 상태면 로컬 상태만 업데이트
+    if (!isAuthenticated) {
+      set((state) => ({
+        links: state.links.filter((link) => link.id !== linkId),
+      }));
+      get().saveLinksToSessionStorage();
+      return;
+    }
+    
+    // 로그인 상태면 서버에서도 삭제
     try {
       await linksApi.deleteLink(linkId);
       set((state) => ({
@@ -178,6 +204,21 @@ export const useLinksStore = create<LinksState>((set, get) => ({
   },
 
   reorderLinks: async (linkIds) => {
+    const { isAuthenticated } = useAuthStore.getState();
+    
+    // 비로그인 상태면 로컬 상태만 업데이트
+    if (!isAuthenticated) {
+      set((state) => {
+        const reorderedLinks = linkIds
+          .map((id) => state.links.find((link) => link.id === id))
+          .filter((link): link is Link => link !== undefined);
+        return { links: reorderedLinks };
+      });
+      get().saveLinksToSessionStorage();
+      return;
+    }
+    
+    // 로그인 상태면 서버에 저장
     try {
       const response = await linksApi.reorderLinks(linkIds);
       set({ links: response.data });
@@ -231,6 +272,20 @@ export const useLinksStore = create<LinksState>((set, get) => ({
   },
 
   updateSocialLink: async (socialLinkId, data) => {
+    const { isAuthenticated } = useAuthStore.getState();
+    
+    // 비로그인 상태면 로컬 상태만 업데이트
+    if (!isAuthenticated) {
+      set((state) => ({
+        socialLinks: state.socialLinks.map((link) =>
+          link.id === socialLinkId ? { ...link, ...data } : link
+        ),
+      }));
+      get().saveLinksToSessionStorage();
+      return;
+    }
+    
+    // 로그인 상태면 서버에 저장
     try {
       const response = await linksApi.updateSocialLink(socialLinkId, data);
       set((state) => ({
@@ -247,6 +302,20 @@ export const useLinksStore = create<LinksState>((set, get) => ({
   },
 
   deleteSocialLink: async (socialLinkId) => {
+    const { isAuthenticated } = useAuthStore.getState();
+    
+    // 비로그인 상태면 로컬 상태만 업데이트
+    if (!isAuthenticated) {
+      set((state) => ({
+        socialLinks: state.socialLinks.filter(
+          (link) => link.id !== socialLinkId
+        ),
+      }));
+      get().saveLinksToSessionStorage();
+      return;
+    }
+    
+    // 로그인 상태면 서버에서도 삭제
     try {
       await linksApi.deleteSocialLink(socialLinkId);
       set((state) => ({

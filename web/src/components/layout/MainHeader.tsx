@@ -55,7 +55,7 @@ export function MainHeader() {
           })}
         </nav>
 
-        {/* 로그인 버튼 - 오른쪽 */}
+        {/* 버튼 영역 - 오른쪽 */}
         <div className="flex items-center gap-3">
           {isLoading ? (
             <div className="h-10 w-20" />
@@ -69,14 +69,24 @@ export function MainHeader() {
               </Button>
             </Link>
           ) : (
-            <Link href="/login">
-              <Button
-                variant="primary"
-                className="px-4 py-2 text-sm h-auto"
-              >
-                로그인
-              </Button>
-            </Link>
+            <>
+              <Link href="/dashboard/links">
+                <Button
+                  variant="secondary"
+                  className="px-4 py-2 text-sm h-auto"
+                >
+                  시작하기
+                </Button>
+              </Link>
+              <Link href="/login">
+                <Button
+                  variant="primary"
+                  className="px-4 py-2 text-sm h-auto"
+                >
+                  로그인
+                </Button>
+              </Link>
+            </>
           )}
         </div>
       </div>
