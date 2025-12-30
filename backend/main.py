@@ -6,6 +6,9 @@ FastAPI 앱 진입점
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 
 from backend.core.config import settings
 from backend.core.exceptions import BaseAppException
@@ -34,6 +37,12 @@ def create_app() -> FastAPI:
             docs_url=f"{settings.API_PREFIX}/docs" if settings.DEBUG else None,
             redoc_url=f"{settings.API_PREFIX}/redoc" if settings.DEBUG else None,
         )
+        
+        # Rate Limiting 설정
+        limiter = Limiter(key_func=get_remote_address, default_limits=["200/minute"])
+        app.state.limiter = limiter
+        app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+        logger.info("Rate limiting configured: 200 requests/minute per IP")
         
         logger.info("Setting up middlewares...")
         setup_middlewares(app)
