@@ -584,11 +584,17 @@ export default function LinksPage() {
           <CardContent className="p-4 space-y-4">
             {/* 프로필 이미지 영역 */}
             <div className="flex items-center gap-4">
-              <Avatar
-                src={profile?.profile_image_url || "/avatar-placeholder.jpg"}
-                alt={profile?.username || "User"}
-                size={64}
-              />
+              {isAuthenticated ? (
+                <Avatar
+                  src={profile?.profile_image_url || "/avatar-placeholder.jpg"}
+                  alt={profile?.username || "User"}
+                  size={64}
+                />
+              ) : (
+                <div className="w-16 h-16 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold text-2xl">
+                  T
+                </div>
+              )}
               <div className="flex-1">
                 <input
                   type="file"
@@ -1293,13 +1299,19 @@ export default function LinksPage() {
               {/* 프로필 정보 */}
               <div className="flex-1 space-y-2 min-w-0">
                 <div className="flex items-center gap-3">
-                  <Avatar
-                    src={
-                      profile?.profile_image_url || "/avatar-placeholder.jpg"
-                    }
-                    alt={profile?.username || "User"}
-                    size={48}
-                  />
+                  {isAuthenticated ? (
+                    <Avatar
+                      src={
+                        profile?.profile_image_url || "/avatar-placeholder.jpg"
+                      }
+                      alt={profile?.username || "User"}
+                      size={48}
+                    />
+                  ) : (
+                    <div className="w-12 h-12 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold text-xl">
+                      T
+                    </div>
+                  )}
                   <div>
                     <input
                       type="file"
