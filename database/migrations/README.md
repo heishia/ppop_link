@@ -26,7 +26,9 @@ psql "postgresql://[username]:[password]@[host]:[port]/[database]"
 - `003_ppop_auth_migration.sql` - PPOP Auth 마이그레이션
 - `004_update_plan_types.sql` - 플랜 타입 업데이트
 - `005_add_phone_number.sql` - 전화번호 추가
-- **`006_create_content_table.sql`** - 컨텐츠 테이블 생성 (NEW!)
+- `006_create_content_table.sql` - 컨텐츠 테이블 생성
+- **`007_add_content_images_table.sql`** - 컨텐츠 이미지 테이블 생성 (NEW!)
+- **`008_remove_is_admin_column.sql`** - is_admin 컬럼 제거 (JWT 기반 관리로 전환) (NEW!)
 
 ## 006_create_content_table.sql 상세 정보
 
@@ -79,13 +81,60 @@ SELECT indexname, indexdef FROM pg_indexes WHERE tablename = 'content';
 SELECT tgname FROM pg_trigger WHERE tgrelid = 'content'::regclass;
 ```
 
+## 007_add_content_images_table.sql 상세 정보
+
+### 생성되는 테이블
+
+- `content_images` - 컨텐츠 이미지 저장 테이블
+
+### 컬럼 정보
+
+- `id` (UUID) - 기본 키
+- `content_id` (UUID) - 컨텐츠 ID (NULL 가능)
+- `image_url` (TEXT) - Supabase Storage 공개 URL
+- `file_path` (TEXT) - Supabase Storage 파일 경로
+- `file_size` (INTEGER) - 파일 크기
+- `mime_type` (VARCHAR) - MIME 타입
+- `uploaded_by` (UUID) - 업로더 ID
+- `created_at` (TIMESTAMP) - 생성 일시
+
+### 인덱스
+
+- `idx_content_images_content_id` - 컨텐츠별 이미지 조회 최적화
+- `idx_content_images_uploaded_by` - 업로더별 이미지 조회 최적화
+
+## 008_remove_is_admin_column.sql 상세 정보
+
+### 변경 내용
+
+- `users` 테이블에서 `is_admin` 컬럼 제거
+
+### 이유
+
+JWT의 `isAdmin` 필드를 단일 진실의 원천(Single Source of Truth)으로 사용하기 위함:
+- 데이터 중복 제거
+- 동기화 로직 불필요
+- 실시간 권한 반영 (재로그인 시)
+- 코드 단순화
+
+### 주의사항
+
+이 마이그레이션 후에는:
+- 관리자 권한은 PPOP Auth에서만 관리됩니다
+- JWT 토큰의 `isAdmin` 필드가 권한 판단에 사용됩니다
+- 백엔드 코드가 `UserWithAuth` 모델을 사용합니다
+
 ## 롤백 (필요시)
 
 ```sql
--- 테이블 삭제
+-- content 테이블 삭제
 DROP TABLE IF EXISTS content CASCADE;
-
--- 함수 삭제
 DROP FUNCTION IF EXISTS update_content_updated_at() CASCADE;
+
+-- content_images 테이블 삭제
+DROP TABLE IF EXISTS content_images CASCADE;
+
+-- is_admin 컬럼 복원 (롤백 시)
+ALTER TABLE users ADD COLUMN is_admin BOOLEAN DEFAULT FALSE;
 ```
 

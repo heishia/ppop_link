@@ -84,6 +84,7 @@ class UserUpdate(BaseModel):
 
 
 class User(UserBase, TimestampMixin):
+    """DB에 저장되는 기본 사용자 정보 (is_admin 제거 - JWT에서만 관리)"""
     id: UUID
     user_seq: Optional[int] = None                # 순차 번호 (링크 ID 생성용)
     public_link_id: Optional[str] = None          # 암호화된 공개 링크 ID
@@ -94,9 +95,14 @@ class User(UserBase, TimestampMixin):
     theme: str = "default"
     button_style: str = "default"                 # 링크 버튼 스타일 (default, outline, filled)
     is_active: bool = True
-    is_admin: bool = False
+    # is_admin 필드 제거 - JWT의 isAdmin을 단일 진실의 원천으로 사용
     
     model_config = ConfigDict(from_attributes=True)
+
+
+class UserWithAuth(User):
+    """JWT 정보를 포함한 사용자 (API 응답용, 런타임 전용)"""
+    is_admin: bool = False  # JWT에서 추출, DB에는 저장 안 함
 
 
 class UserInDB(User):

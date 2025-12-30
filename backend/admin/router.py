@@ -6,9 +6,9 @@ from typing import Optional
 from uuid import UUID
 from fastapi import APIRouter, Depends, Query
 
-from backend.core.models import User
+from backend.core.models import User, UserWithAuth
 from backend.core.exceptions import AdminRequiredError
-from backend.auth.router import get_current_user
+from backend.auth.router import get_current_user_with_auth
 from backend.admin.schemas import (
     UserListResponse,
     StatsResponse,
@@ -21,7 +21,8 @@ from backend.admin.service import admin_service
 router = APIRouter()
 
 
-async def get_admin_user(current_user: User = Depends(get_current_user)) -> User:
+async def get_admin_user(current_user: UserWithAuth = Depends(get_current_user_with_auth)) -> UserWithAuth:
+    """관리자 권한 확인 (JWT 기반)"""
     if not current_user.is_admin:
         raise AdminRequiredError()
     return current_user
@@ -32,7 +33,7 @@ async def get_users(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     search: Optional[str] = None,
-    admin: User = Depends(get_admin_user)
+    admin: UserWithAuth = Depends(get_admin_user)
 ):
     users, total = await admin_service.get_users(page, page_size, search)
     return UserListResponse(
@@ -44,7 +45,7 @@ async def get_users(
 
 
 @router.get("/stats", response_model=StatsResponse)
-async def get_stats(admin: User = Depends(get_admin_user)):
+async def get_stats(admin: UserWithAuth = Depends(get_admin_user)):
     stats = await admin_service.get_stats()
     return StatsResponse(data=stats)
 
@@ -53,7 +54,7 @@ async def get_stats(admin: User = Depends(get_admin_user)):
 async def update_user_plan(
     user_id: UUID,
     request: PlanUpdateRequest,
-    admin: User = Depends(get_admin_user)
+    admin: UserWithAuth = Depends(get_admin_user)
 ):
     user = await admin_service.update_user_plan(user_id, request.plan_type)
     return UserResponse(data=user)
@@ -63,12 +64,13 @@ async def update_user_plan(
 async def update_admin_status(
     user_id: UUID,
     request: AdminStatusUpdateRequest,
-    admin: User = Depends(get_admin_user)
+    admin: UserWithAuth = Depends(get_admin_user)
 ):
     """
     사용자의 관리자 권한 설정
     
-    Note: 슈퍼 관리자만 다른 사용자의 관리자 권한을 변경할 수 있습니다.
+    Note: 이 엔드포인트는 더 이상 사용되지 않습니다.
+    관리자 권한은 PPOP Auth에서 JWT의 isAdmin 필드로 관리됩니다.
     """
     user = await admin_service.update_admin_status(user_id, request.is_admin)
     return UserResponse(data=user)

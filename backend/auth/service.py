@@ -208,7 +208,7 @@ class AuthService:
             "display_name": username,
             "theme": "default",
             "is_active": True,
-            "is_admin": False,
+            # is_admin 제거 - JWT에서만 관리
             "created_at": now,
         }
         
@@ -507,7 +507,7 @@ class AuthService:
             theme=data.get("theme", "default"),
             button_style=data.get("button_style", "default"),
             is_active=data.get("is_active", True),
-            is_admin=data.get("is_admin", False),
+            # is_admin 제거 - JWT에서만 관리
             created_at=data.get("created_at"),
             updated_at=data.get("updated_at"),
         )

@@ -83,5 +83,27 @@ export const contentApi = {
     );
     return response.data.data;
   },
+
+  // 이미지 업로드 (관리자 전용)
+  uploadImage: async (file: File): Promise<{ url: string; file_path: string }> => {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const response = await apiClient.post<{
+      success: boolean;
+      url: string;
+      file_path: string;
+    }>(
+      "/api/content/images/upload",
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      }
+    );
+
+    return { url: response.data.url, file_path: response.data.file_path };
+  },
 };
 

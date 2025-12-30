@@ -40,6 +40,7 @@ class Settings(BaseSettings):
     # Storage
     STORAGE_BUCKET_PROFILES: str = "profiles"
     STORAGE_BUCKET_BACKGROUNDS: str = "backgrounds"
+    STORAGE_BUCKET_CONTENT_IMAGES: str = "content-images"
     MAX_FILE_SIZE_MB: int = 5
     
     # Plan Limits

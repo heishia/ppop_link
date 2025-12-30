@@ -3,11 +3,11 @@
 """
 
 from typing import Optional
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, File, UploadFile
 
-from backend.core.models import User
+from backend.core.models import User, UserWithAuth
 from backend.core.exceptions import AdminRequiredError
-from backend.auth.router import get_current_user
+from backend.auth.router import get_current_user_with_auth
 from backend.content.schemas import (
     ContentListResponse,
     ContentResponse,
@@ -16,12 +16,13 @@ from backend.content.schemas import (
     MessageResponse
 )
 from backend.content.service import content_service
+from backend.files.service import file_service
 
 router = APIRouter()
 
 
-async def get_admin_user(current_user: User = Depends(get_current_user)) -> User:
-    """관리자 권한 확인"""
+async def get_admin_user(current_user: UserWithAuth = Depends(get_current_user_with_auth)) -> UserWithAuth:
+    """관리자 권한 확인 (JWT 기반)"""
     if not current_user.is_admin:
         raise AdminRequiredError()
     return current_user
@@ -56,7 +57,7 @@ async def get_content_by_slug(slug: str):
 @router.post("", response_model=ContentResponse)
 async def create_content(
     content_data: ContentCreate,
-    admin: User = Depends(get_admin_user)
+    admin: UserWithAuth = Depends(get_admin_user)
 ):
     """
     새 컨텐츠 생성 (관리자 전용)
@@ -69,7 +70,7 @@ async def create_content(
 async def update_content(
     slug: str,
     content_data: ContentUpdate,
-    admin: User = Depends(get_admin_user)
+    admin: UserWithAuth = Depends(get_admin_user)
 ):
     """
     컨텐츠 업데이트 (관리자 전용)
@@ -81,7 +82,7 @@ async def update_content(
 @router.delete("/{slug}", response_model=MessageResponse)
 async def delete_content(
     slug: str,
-    admin: User = Depends(get_admin_user)
+    admin: UserWithAuth = Depends(get_admin_user)
 ):
     """
     컨텐츠 삭제 (관리자 전용)
@@ -93,7 +94,7 @@ async def delete_content(
 @router.get("/admin/all", response_model=ContentListResponse)
 async def get_all_content_admin(
     category: Optional[str] = Query(None, description="카테고리 필터"),
-    admin: User = Depends(get_admin_user)
+    admin: UserWithAuth = Depends(get_admin_user)
 ):
     """
     모든 컨텐츠 조회 (발행/미발행 포함, 관리자 전용)
@@ -106,4 +107,22 @@ async def get_all_content_admin(
         data=content_list,
         total=len(content_list)
     )
+
+
+@router.post("/images/upload")
+async def upload_content_image(
+    file: UploadFile = File(...),
+    admin: UserWithAuth = Depends(get_admin_user)
+):
+    """
+    컨텐츠 이미지 업로드 (관리자 전용)
+    마크다운 에디터에서 사용
+    """
+    public_url, file_path = await file_service.upload_content_image(admin.id, file)
+    
+    return {
+        "success": True,
+        "url": public_url,
+        "file_path": file_path
+    }
 

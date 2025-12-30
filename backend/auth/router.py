@@ -6,8 +6,8 @@ PPOP Auth SSO 연동
 from fastapi import APIRouter, Depends, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
-from backend.core.security import verify_access_token, extract_token_from_header
-from backend.core.models import User, Token
+from backend.core.security import verify_access_token, extract_token_from_header, get_token_payload
+from backend.core.models import User, UserWithAuth, Token
 from backend.auth.schemas import (
     OAuthCallbackRequest,
     OAuthRefreshRequest,
@@ -47,6 +47,23 @@ async def get_current_user_with_token(
         from backend.core.exceptions import UserNotFoundError
         raise UserNotFoundError()
     return user, access_token
+
+
+async def get_current_user_with_auth(
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+) -> UserWithAuth:
+    """JWT 검증 및 사용자 정보 + 관리자 여부 반환 (JWT 기반)"""
+    access_token = credentials.credentials
+    payload = get_token_payload(access_token)
+    
+    # DB에서 기본 정보만 조회
+    user = await auth_service.get_or_create_user_from_token(access_token)
+    
+    # JWT의 isAdmin을 런타임에 추가
+    return UserWithAuth(
+        **user.dict(),
+        is_admin=payload.get("isAdmin", False)  # JWT에서만 가져옴
+    )
 
 
 @router.get("/oauth/login", response_model=OAuthLoginURLResponse)

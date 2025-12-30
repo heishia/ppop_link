@@ -47,6 +47,46 @@ class FileService:
             prefix="background"
         )
     
+    async def upload_content_image(
+        self,
+        user_id: UUID,
+        file: UploadFile
+    ) -> tuple[str, str]:
+        """
+        컨텐츠 이미지 업로드
+        
+        Args:
+            user_id: 업로드하는 사용자 ID
+            file: 업로드할 파일
+            
+        Returns:
+            (public_url, file_path): 공개 URL과 파일 경로
+        """
+        self._validate_file_type(file)
+        await self._validate_file_size(file)
+        
+        extension = self._get_file_extension(file.filename)
+        file_name = f"content_{uuid4().hex}{extension}"
+        file_path = f"content/{user_id}/{file_name}"
+        
+        try:
+            content = await file.read()
+            
+            db.storage.from_(settings.STORAGE_BUCKET_CONTENT_IMAGES).upload(
+                path=file_path,
+                file=content,
+                file_options={"content-type": file.content_type}
+            )
+            
+            public_url = db.storage.from_(settings.STORAGE_BUCKET_CONTENT_IMAGES).get_public_url(file_path)
+            
+            logger.info(f"Content image uploaded: {file_path}")
+            return public_url, file_path
+            
+        except Exception as e:
+            logger.error(f"Content image upload failed: {e}")
+            raise FileUploadError(detail=str(e))
+    
     async def _upload_image(
         self,
         bucket: str,
