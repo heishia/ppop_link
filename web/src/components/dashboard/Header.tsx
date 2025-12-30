@@ -1,13 +1,11 @@
 "use client";
 
 import React, { useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
 import { useProfileStore } from "@/store/profileStore";
 import { Avatar } from "@/components/ui/Avatar";
 
 export function Header() {
-  const router = useRouter();
   const { logout } = useAuthStore();
   const { profile, fetchProfile } = useProfileStore();
 
