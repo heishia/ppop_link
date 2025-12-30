@@ -34,7 +34,7 @@ export default function GlobalError({
               </Button>
               <Button
                 variant="secondary"
-                onClick={() => (window.location.href = "/")}
+                onClick={() => window.location.assign("/")}
               >
                 홈으로 가기
               </Button>
