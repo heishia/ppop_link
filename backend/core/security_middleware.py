@@ -14,8 +14,16 @@ from starlette.types import ASGIApp
 
 from backend.core.logger import get_logger
 from backend.core.security_service import security_service
+from backend.core.config import settings
 
 logger = get_logger(__name__)
+
+
+def format_ip_for_log(ip: str) -> str:
+    """로그용 IP 포맷 (개발자 IP는 [DEV] 태그 추가)"""
+    if ip in settings.developer_ips_list:
+        return f"[DEV] {ip}"
+    return ip
 
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
@@ -95,7 +103,7 @@ class MaliciousPatternMiddleware(BaseHTTPMiddleware):
                 
                 # 로그 및 Sentry 기록
                 logger.warning(
-                    f"Malicious pattern blocked: {path} from {ip}",
+                    f"Malicious pattern blocked: {path} from {format_ip_for_log(ip)}",
                     extra={
                         "ip": ip,
                         "path": path,
@@ -175,7 +183,7 @@ class IPBlacklistMiddleware(BaseHTTPMiddleware):
         
         if is_blocked:
             logger.warning(
-                f"Blacklisted IP blocked: {ip} tried to access {path}",
+                f"Blacklisted IP blocked: {format_ip_for_log(ip)} tried to access {path}",
                 extra={
                     "ip": ip,
                     "path": path,
@@ -240,8 +248,9 @@ class RequestSizeLimitMiddleware(BaseHTTPMiddleware):
         content_length = request.headers.get("content-length")
         
         if content_length and int(content_length) > self.max_size:
+            ip = request.client.host if request.client else 'unknown'
             logger.warning(
-                f"Request too large: {content_length} bytes from {request.client.host if request.client else 'unknown'}"
+                f"Request too large: {content_length} bytes from {format_ip_for_log(ip)}"
             )
             
             return JSONResponse(

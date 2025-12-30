@@ -50,6 +50,9 @@ class Settings(BaseSettings):
     # Logging
     LOG_LEVEL: str = "INFO"
     
+    # Developer IPs (로그에서 구분하기 위함)
+    DEVELOPER_IPS: str = ""  # 쉼표로 구분 (예: "1.2.3.4,5.6.7.8")
+    
     @property
     def cors_origins_list(self) -> List[str]:
         """CORS 허용 오리진 목록"""
@@ -58,6 +61,13 @@ class Settings(BaseSettings):
         if self.PPOP_AUTH_CLIENT_ORIGIN:
             origins.append(self.PPOP_AUTH_CLIENT_ORIGIN.strip())
         return origins
+    
+    @property
+    def developer_ips_list(self) -> List[str]:
+        """개발자 IP 목록"""
+        if not self.DEVELOPER_IPS:
+            return []
+        return [ip.strip() for ip in self.DEVELOPER_IPS.split(",") if ip.strip()]
     
     @property
     def max_file_size_bytes(self) -> int:
