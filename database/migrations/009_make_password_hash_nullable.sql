@@ -1,22 +1,14 @@
--- Migration: Make password_hash nullable for OAuth users
+-- Migration: Make password_hash nullable for OAuth-only authentication
 -- Date: 2025-12-30
--- Description: OAuth 사용자는 비밀번호가 필요 없으므로 password_hash를 nullable로 변경
+-- Description: 
+-- 현재 시스템은 PPOP Auth OAuth만 사용하므로 password_hash를 nullable로 변경
+-- 모든 사용자는 OAuth를 통해 가입하며 password_hash는 항상 NULL입니다.
 
--- 1. password_hash 컬럼을 nullable로 변경
+-- password_hash 컬럼을 nullable로 변경
 ALTER TABLE users 
 ALTER COLUMN password_hash DROP NOT NULL;
 
--- 2. 검증: password_hash가 NULL인 경우 id가 있어야 함 (data integrity)
--- OAuth 사용자인지 확인하는 제약 조건 추가
-ALTER TABLE users 
-ADD CONSTRAINT check_password_or_oauth 
-CHECK (
-    password_hash IS NOT NULL OR 
-    id IS NOT NULL
-);
-
 -- Note: 
--- - OAuth 로그인 사용자는 password_hash가 NULL
--- - 기존 로컬 회원가입 사용자는 password_hash 필수
--- - 모든 사용자는 id가 필수 (PRIMARY KEY)
-
+-- - 모든 사용자는 PPOP Auth OAuth를 통해 가입/로그인
+-- - password_hash는 항상 NULL로 설정됨
+-- - 향후 직접 회원가입 기능 추가 시 이 컬럼을 활용 가능
