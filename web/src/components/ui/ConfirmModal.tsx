@@ -10,7 +10,7 @@ interface ConfirmModalProps {
   message: string;
   confirmText?: string;
   cancelText?: string;
-  confirmVariant?: "primary" | "secondary" | "danger";
+  confirmVariant?: "primary" | "secondary" | "tertiary";
 }
 
 export function ConfirmModal({
