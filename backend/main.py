@@ -15,6 +15,14 @@ from backend.core.exceptions import BaseAppException
 from backend.core.logger import logger
 from backend.core.sentry import init_sentry
 
+# 보안 미들웨어 import
+from backend.core.security_middleware import (
+    SecurityHeadersMiddleware,
+    MaliciousPatternMiddleware,
+    IPBlacklistMiddleware,
+    RequestSizeLimitMiddleware
+)
+
 # 라우터 import
 from backend.auth.router import router as auth_router
 from backend.profiles.router import router as profile_router
@@ -41,7 +49,34 @@ def create_app() -> FastAPI:
         # Rate Limiting 설정
         limiter = Limiter(key_func=get_remote_address, default_limits=["200/minute"])
         app.state.limiter = limiter
-        app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+        
+        # Rate limit 예외 핸들러 (Sentry 연동 + 자동 차단)
+        @app.exception_handler(RateLimitExceeded)
+        async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
+            # 클라이언트 IP
+            ip = get_remote_address(request)
+            path = request.url.path
+            
+            # Sentry에 기록
+            try:
+                from backend.core.sentry import capture_rate_limit_exceeded
+                capture_rate_limit_exceeded(ip, path, str(exc.detail))
+            except Exception as e:
+                logger.debug(f"Failed to send to Sentry: {e}")
+            
+            # 자동 차단 확인
+            try:
+                from backend.core.security_service import security_service
+                await security_service.check_and_auto_blacklist(
+                    ip, 
+                    security_service.VIOLATION_RATE_LIMIT
+                )
+            except Exception as e:
+                logger.error(f"Failed to check auto-blacklist: {e}")
+            
+            # 기본 핸들러 호출
+            return _rate_limit_exceeded_handler(request, exc)
+        
         logger.info("Rate limiting configured: 200 requests/minute per IP")
         
         logger.info("Setting up middlewares...")
@@ -61,6 +96,13 @@ def create_app() -> FastAPI:
 
 
 def setup_middlewares(app: FastAPI) -> None:
+    """
+    미들웨어 설정
+    
+    주의: 미들웨어는 역순으로 실행됩니다.
+    마지막에 추가한 것이 가장 먼저 실행됩니다.
+    """
+    # CORS (가장 마지막에 추가 = 가장 먼저 실행)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.cors_origins_list,
@@ -68,6 +110,22 @@ def setup_middlewares(app: FastAPI) -> None:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+    
+    # 요청 크기 제한 (10MB)
+    app.add_middleware(RequestSizeLimitMiddleware, max_size=10 * 1024 * 1024)
+    logger.info("Request size limit configured: 10MB")
+    
+    # 악의적인 패턴 차단
+    app.add_middleware(MaliciousPatternMiddleware)
+    logger.info("Malicious pattern blocking enabled")
+    
+    # IP 블랙리스트 확인
+    app.add_middleware(IPBlacklistMiddleware)
+    logger.info("IP blacklist checking enabled")
+    
+    # 보안 헤더 추가 (가장 먼저 추가 = 가장 나중에 실행, 응답에 헤더 추가)
+    app.add_middleware(SecurityHeadersMiddleware)
+    logger.info("Security headers enabled")
 
 
 def setup_exception_handlers(app: FastAPI) -> None:

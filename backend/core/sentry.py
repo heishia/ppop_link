@@ -114,3 +114,68 @@ def add_breadcrumb(message: str, category: str = "custom", level: str = "info", 
         data=data or {},
     )
 
+
+def capture_security_event(
+    event_type: str,
+    ip_address: str,
+    path: str,
+    severity: str = "warning",
+    **kwargs
+):
+    """
+    보안 이벤트를 Sentry에 기록
+    
+    Args:
+        event_type: 이벤트 유형 (malicious_pattern_blocked, rate_limit_exceeded, etc.)
+        ip_address: 클라이언트 IP 주소
+        path: 요청 경로
+        severity: 심각도 (info, warning, error, fatal)
+        **kwargs: 추가 컨텍스트 데이터
+    """
+    # Sentry가 초기화되지 않았으면 무시
+    if not sentry_sdk.Hub.current.client:
+        return
+    
+    # 보안 이벤트를 message로 기록
+    with sentry_sdk.push_scope() as scope:
+        # 태그 추가
+        scope.set_tag("security_event", event_type)
+        scope.set_tag("ip_address", ip_address)
+        scope.set_level(severity)
+        
+        # 컨텍스트 추가
+        scope.set_context("security", {
+            "event_type": event_type,
+            "ip_address": ip_address,
+            "path": path,
+            **kwargs
+        })
+        
+        # 메시지 캡처
+        message = f"Security Event: {event_type} from {ip_address} on {path}"
+        sentry_sdk.capture_message(message, level=severity)
+        
+        logger.debug(f"Security event sent to Sentry: {event_type}")
+
+
+def capture_rate_limit_exceeded(ip_address: str, path: str, limit: str):
+    """Rate limit 초과 이벤트 기록"""
+    capture_security_event(
+        event_type="rate_limit_exceeded",
+        ip_address=ip_address,
+        path=path,
+        severity="warning",
+        limit=limit
+    )
+
+
+def capture_auto_blacklist(ip_address: str, reason: str, violation_count: int):
+    """자동 블랙리스트 추가 이벤트 기록"""
+    capture_security_event(
+        event_type="auto_blacklist_triggered",
+        ip_address=ip_address,
+        path="N/A",
+        severity="error",
+        reason=reason,
+        violation_count=violation_count
+    )
