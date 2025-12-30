@@ -17,8 +17,8 @@ class Settings(BaseSettings):
     APP_PORT: int = 8005
     
     # Supabase
-    SUPABASE_URL: str
-    SUPABASE_KEY: str
+    SUPABASE_URL: str = ""
+    SUPABASE_KEY: str = ""
     SUPABASE_SERVICE_KEY: str = ""
     
     # PPOP Auth (SSO)
@@ -84,7 +84,60 @@ class Settings(BaseSettings):
 @lru_cache()
 def get_settings() -> Settings:
     try:
-        return Settings()
+        settings = Settings()
+        
+        # 중요 환경변수 검증
+        missing_vars = []
+        invalid_vars = []
+        
+        if not settings.SUPABASE_URL:
+            missing_vars.append("SUPABASE_URL")
+        elif settings.SUPABASE_URL == "https://xxxx.supabase.co":
+            invalid_vars.append("SUPABASE_URL (placeholder value detected)")
+        
+        if not settings.SUPABASE_KEY:
+            missing_vars.append("SUPABASE_KEY")
+        
+        # 프로덕션 환경에서는 더 엄격한 검증
+        if settings.APP_ENV == "prod":
+            if not settings.SUPABASE_SERVICE_KEY:
+                missing_vars.append("SUPABASE_SERVICE_KEY (recommended for production)")
+        
+        if missing_vars or invalid_vars:
+            import sys
+            print("=" * 60)
+            print("ERROR: Environment Configuration Issues Detected")
+            print("=" * 60)
+            
+            if missing_vars:
+                print("\nMissing required environment variables:")
+                for var in missing_vars:
+                    print(f"  ❌ {var}")
+            
+            if invalid_vars:
+                print("\nInvalid environment variable values:")
+                for var in invalid_vars:
+                    print(f"  ⚠️  {var}")
+            
+            print("\n" + "=" * 60)
+            print("Configuration Guide:")
+            print("=" * 60)
+            print("\n1. For Railway deployment:")
+            print("   - Go to your Railway project settings")
+            print("   - Navigate to 'Variables' tab")
+            print("   - Add/update the required variables")
+            print("\n2. For local development:")
+            print("   - Create/update .env.local file")
+            print("   - Add the required variables")
+            print("\nExample values:")
+            print("  SUPABASE_URL=https://your-project.supabase.co")
+            print("  SUPABASE_KEY=your-anon-key")
+            print("  SUPABASE_SERVICE_KEY=your-service-role-key")
+            print("=" * 60)
+            sys.exit(1)
+        
+        return settings
+        
     except Exception as e:
         import sys
         print("=" * 60)
@@ -102,7 +155,7 @@ def get_settings() -> Settings:
         print("  - PPOP_AUTH_REDIRECT_URI")
         print("  - PPOP_AUTH_JWKS_URI")
         print()
-        print("Please create a .env.dev file in the project root with these variables.")
+        print("Please create a .env.local file in the project root with these variables.")
         print("Example:")
         print("  SUPABASE_URL=https://your-project.supabase.co")
         print("  SUPABASE_KEY=your-anon-key")
