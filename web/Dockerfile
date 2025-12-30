@@ -7,6 +7,12 @@ FROM node:20-alpine AS base
 # Install dependencies only when needed
 FROM base AS deps
 RUN apk add --no-cache libc6-compat
+# Install build dependencies for sharp
+RUN apk add --no-cache --virtual .build-deps \
+    python3 \
+    make \
+    g++ \
+    && apk add --no-cache vips-dev
 WORKDIR /app
 
 # Copy package files
