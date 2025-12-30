@@ -18,6 +18,7 @@ import {
   SOCIAL_PLATFORMS,
 } from "@/components/ui/SocialPlatformIcon";
 import { ImageCropModal } from "@/components/ui/ImageCropModal";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { PASTEL_COLORS } from "@/lib/constants/colors";
 import { useIsMobile } from "@/lib/hooks/useIsMobile";
 import { ButtonStyle } from "@/lib/api/auth";
@@ -125,6 +126,9 @@ export default function LinksPage() {
 
   // 이미지 업로드 완료 상태
   const [imageUploadComplete, setImageUploadComplete] = useState(false);
+
+  // 로그인 확인 모달 상태
+  const [isLoginConfirmOpen, setIsLoginConfirmOpen] = useState(false);
 
   // 링크 복사 상태
   const [isCopied, setIsCopied] = useState(false);
@@ -303,6 +307,12 @@ export default function LinksPage() {
   const handleSaveProfile = async () => {
     if (isProfileSaving || !isProfileDirty) return;
 
+    // 비로그인 상태면 로그인 확인 모달 표시
+    if (!isAuthenticated) {
+      setIsLoginConfirmOpen(true);
+      return;
+    }
+
     setIsProfileSaving(true);
     setProfileSaveMessage(null);
     clearProfileError();
@@ -335,6 +345,12 @@ export default function LinksPage() {
     } finally {
       setIsProfileSaving(false);
     }
+  };
+
+  // 로그인 확인 후 OAuth 로그인 시작
+  const handleLoginConfirm = async () => {
+    const { startOAuthLogin } = useAuthStore.getState();
+    await startOAuthLogin();
   };
 
   // 소셜 링크 추가 저장 (개별)
@@ -1139,6 +1155,17 @@ export default function LinksPage() {
             aspectRatio={1}
           />
         )}
+
+        {/* 로그인 확인 모달 */}
+        <ConfirmModal
+          isOpen={isLoginConfirmOpen}
+          onClose={() => setIsLoginConfirmOpen(false)}
+          onConfirm={handleLoginConfirm}
+          title="로그인이 필요합니다"
+          message="프로필을 저장하려면 로그인이 필요합니다.&#10;지금 로그인하시겠습니까?"
+          confirmText="로그인"
+          cancelText="취소"
+        />
       </div>
     );
   }
@@ -1731,6 +1758,17 @@ export default function LinksPage() {
           aspectRatio={1}
         />
       )}
+
+      {/* 로그인 확인 모달 */}
+      <ConfirmModal
+        isOpen={isLoginConfirmOpen}
+        onClose={() => setIsLoginConfirmOpen(false)}
+        onConfirm={handleLoginConfirm}
+        title="로그인이 필요합니다"
+        message="프로필을 저장하려면 로그인이 필요합니다.&#10;지금 로그인하시겠습니까?"
+        confirmText="로그인"
+        cancelText="취소"
+      />
     </div>
   );
 }

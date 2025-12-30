@@ -25,7 +25,8 @@ export function MainHeader() {
       setIsLoading(false);
     };
     init();
-  }, [loadUser]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // 마운트 시에만 실행
 
   return (
     <header className="sticky top-0 z-50 w-full bg-white">

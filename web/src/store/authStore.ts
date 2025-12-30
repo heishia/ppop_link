@@ -154,7 +154,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         user: null,
         isAuthenticated: false,
         error: null,
+        subscription: null,
       });
+      
+      // 랜딩 페이지로 리다이렉트 (페이지 새로고침으로 상태 완전 초기화)
+      if (typeof window !== "undefined") {
+        window.location.href = "/";
+      }
     }
   },
 

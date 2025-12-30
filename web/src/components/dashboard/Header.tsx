@@ -19,13 +19,10 @@ export function Header() {
   const handleLogout = async () => {
     try {
       await logout();
-      router.replace("/login");
+      // authStore에서 자동으로 랜딩 페이지로 리다이렉트
     } catch (error) {
       console.error("Logout failed:", error);
-      // API 실패해도 로컬 토큰 삭제하고 로그인 페이지로
-      localStorage.removeItem("access_token");
-      localStorage.removeItem("refresh_token");
-      router.replace("/login");
+      // authStore에서 finally 블록에서 처리하므로 여기서는 추가 처리 불필요
     }
   };
 

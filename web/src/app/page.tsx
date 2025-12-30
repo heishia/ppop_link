@@ -12,14 +12,15 @@ export default function Home() {
   const { isAuthenticated, loadUser } = useAuthStore();
   const [isLoading, setIsLoading] = useState(true);
 
-  // 로그인 상태 확인
+  // 로그인 상태 확인 (마운트 시에만)
   useEffect(() => {
     const init = async () => {
       await loadUser();
       setIsLoading(false);
     };
     init();
-  }, [loadUser]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // 마운트 시에만 실행
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-gray-50">
@@ -86,9 +87,9 @@ export default function Home() {
                 </Button>
               </Link>
             ) : (
-              // 비로그인 상태: 가입 + 로그인 버튼 표시
+              // 비로그인 상태: 시작하기 + 로그인 버튼 표시
               <>
-                <Link href="/register">
+                <Link href="/dashboard/links">
                   <Button
                     variant="primary"
                     className="px-5 sm:px-6 py-2.5 sm:py-3 text-sm sm:text-base"
@@ -174,25 +175,14 @@ export default function Home() {
             <span className="block mt-1 sm:mt-2 text-yellow-300">무료!</span>
           </h2>
           <div className="mt-6 sm:mt-10 flex justify-center">
-            {isAuthenticated ? (
-              <Link href="/dashboard/links">
-                <Button
-                  variant="secondary"
-                  className="w-auto px-5 sm:px-8 py-2.5 sm:py-3 text-sm sm:text-base bg-white text-primary hover:bg-gray-100 font-bold shadow-xl"
-                >
-                  대시보드로 이동
-                </Button>
-              </Link>
-            ) : (
-              <Link href="/register">
-                <Button
-                  variant="secondary"
-                  className="w-auto px-5 sm:px-8 py-2.5 sm:py-3 text-sm sm:text-base bg-white text-primary hover:bg-gray-100 font-bold shadow-xl"
-                >
-                  지금 바로 시작하기
-                </Button>
-              </Link>
-            )}
+            <Link href="/dashboard/links">
+              <Button
+                variant="secondary"
+                className="w-auto px-5 sm:px-8 py-2.5 sm:py-3 text-sm sm:text-base bg-white text-primary hover:bg-gray-100 font-bold shadow-xl"
+              >
+                {isAuthenticated ? "대시보드로 이동" : "지금 바로 시작하기"}
+              </Button>
+            </Link>
           </div>
         </div>
       </section>
@@ -207,25 +197,14 @@ export default function Home() {
             수천 명의 크리에이터들과 함께 콘텐츠를 공유하세요.
           </p>
           <div className="mt-6 sm:mt-8 flex justify-center">
-            {isAuthenticated ? (
-              <Link href="/dashboard/links">
-                <Button
-                  variant="primary"
-                  className="w-auto px-5 sm:px-6 py-2.5 sm:py-3 text-sm sm:text-base"
-                >
-                  대시보드로 이동
-                </Button>
-              </Link>
-            ) : (
-              <Link href="/register">
-                <Button
-                  variant="primary"
-                  className="w-auto px-5 sm:px-6 py-2.5 sm:py-3 text-sm sm:text-base"
-                >
-                  링크 바이오 만들기
-                </Button>
-              </Link>
-            )}
+            <Link href="/dashboard/links">
+              <Button
+                variant="primary"
+                className="w-auto px-5 sm:px-6 py-2.5 sm:py-3 text-sm sm:text-base"
+              >
+                {isAuthenticated ? "대시보드로 이동" : "링크 바이오 만들기"}
+              </Button>
+            </Link>
           </div>
         </div>
       </section>
