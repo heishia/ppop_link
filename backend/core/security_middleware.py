@@ -59,7 +59,6 @@ class MaliciousPatternMiddleware(BaseHTTPMiddleware):
         r'\.log$',           # 로그 파일
         r'\.ini$',           # 설정 파일
         r'\.conf$',          # 설정 파일
-        r'\.config$',        # 설정 파일
         r'phpinfo',          # phpinfo 함수
         r'\.history$',       # 히스토리 파일
         r'\.bash_history',   # Bash 히스토리
@@ -72,12 +71,10 @@ class MaliciousPatternMiddleware(BaseHTTPMiddleware):
         r'\.htaccess',       # Apache 설정
         r'\.htpasswd',       # Apache 비밀번호
         r'web\.config',      # IIS 설정
-        r'database',         # 데이터베이스 관련
-        r'db_config',        # DB 설정
-        r'credentials',      # 자격증명
-        r'secrets',          # 비밀정보
-        r'api_keys',         # API 키
-        r'tokens',           # 토큰
+        r'/database[/_]',    # 데이터베이스 관련 (경로 구분자 포함)
+        r'/db_config',       # DB 설정
+        r'/credentials',     # 자격증명
+        r'/api_keys',        # API 키
         r'swagger\.json',    # API 스펙 (선택적)
         r'swagger\.yaml',    # API 스펙 (선택적)
     ]

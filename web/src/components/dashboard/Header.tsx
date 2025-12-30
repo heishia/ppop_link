@@ -17,8 +17,16 @@ export function Header() {
   }, [fetchProfile]);
 
   const handleLogout = async () => {
-    await logout();
-    router.push("/login");
+    try {
+      await logout();
+      router.replace("/login");
+    } catch (error) {
+      console.error("Logout failed:", error);
+      // API 실패해도 로컬 토큰 삭제하고 로그인 페이지로
+      localStorage.removeItem("access_token");
+      localStorage.removeItem("refresh_token");
+      router.replace("/login");
+    }
   };
 
   return (
