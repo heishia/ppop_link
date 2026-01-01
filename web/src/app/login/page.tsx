@@ -35,6 +35,7 @@ export default function LoginPage() {
     };
 
     redirectToAuth();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, router]);
 
   // 에러가 있으면 에러 화면 표시
@@ -45,11 +46,9 @@ export default function LoginPage() {
           <Link href="/" className="text-3xl font-extrabold text-primary">
             PPOPLINK
           </Link>
-          
+
           <div className="mt-8 rounded-lg bg-red-50 p-6">
-            <h1 className="mb-2 text-xl font-bold text-red-600">
-              Login Error
-            </h1>
+            <h1 className="mb-2 text-xl font-bold text-red-600">Login Error</h1>
             <p className="mb-4 text-sm text-red-600">{error}</p>
             <button
               onClick={() => window.location.reload()}
@@ -70,7 +69,7 @@ export default function LoginPage() {
         <Link href="/" className="text-3xl font-extrabold text-primary">
           PPOPLINK
         </Link>
-        
+
         <div className="mt-8 flex flex-col items-center">
           <div className="mb-4 h-12 w-12 animate-spin rounded-full border-4 border-gray-200 border-t-primary"></div>
           <p className="text-gray-600">Redirecting to login...</p>
