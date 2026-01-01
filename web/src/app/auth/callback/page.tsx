@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, Suspense } from "react";
+import { useEffect, useState, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
 import Link from "next/link";
@@ -10,33 +10,42 @@ function AuthCallbackContent() {
   const searchParams = useSearchParams();
   const { handleOAuthCallback, error } = useAuthStore();
   const [callbackError, setCallbackError] = useState<string | null>(null);
+  const processingRef = useRef(false);
 
   useEffect(() => {
     const processCallback = async () => {
-      const code = searchParams.get("code");
-      const state = searchParams.get("state");
-      const errorParam = searchParams.get("error");
-      const errorDescription = searchParams.get("error_description");
-
-      // 디버깅: URL 파라미터 로그
-      console.log("Auth callback params:", { code, state, errorParam, errorDescription });
-      console.log("Current URL:", window.location.href);
-
-      // 에러 파라미터가 있으면 에러 처리
-      if (errorParam) {
-        console.error("OAuth error from PPOP Auth:", errorParam, errorDescription);
-        setCallbackError(errorDescription || errorParam);
+      // 이미 처리 중이면 스킵
+      if (processingRef.current) {
+        console.log("OAuth callback already processing, skipping");
         return;
       }
 
-      // code와 state가 없으면 에러
-      if (!code || !state) {
-        console.error("Missing callback parameters:", { code: !!code, state: !!state });
-        setCallbackError("Invalid callback parameters. Please try logging in again.");
-        return;
-      }
+      processingRef.current = true;
 
       try {
+        const code = searchParams.get("code");
+        const state = searchParams.get("state");
+        const errorParam = searchParams.get("error");
+        const errorDescription = searchParams.get("error_description");
+
+        // 디버깅: URL 파라미터 로그
+        console.log("Auth callback params:", { code, state, errorParam, errorDescription });
+        console.log("Current URL:", window.location.href);
+
+        // 에러 파라미터가 있으면 에러 처리
+        if (errorParam) {
+          console.error("OAuth error from PPOP Auth:", errorParam, errorDescription);
+          setCallbackError(errorDescription || errorParam);
+          return;
+        }
+
+        // code와 state가 없으면 에러
+        if (!code || !state) {
+          console.error("Missing callback parameters:", { code: !!code, state: !!state });
+          setCallbackError("Invalid callback parameters. Please try logging in again.");
+          return;
+        }
+
         console.log("Processing OAuth callback...");
         await handleOAuthCallback({ code, state });
         console.log("OAuth callback successful, redirecting to dashboard...");
@@ -46,11 +55,13 @@ function AuthCallbackContent() {
         console.error("OAuth callback error:", err);
         // 에러는 store에서 처리됨
         setCallbackError(err instanceof Error ? err.message : "Failed to complete login");
+      } finally {
+        processingRef.current = false;
       }
     };
 
     processCallback();
-  }, [searchParams, handleOAuthCallback, router]);
+  }, [searchParams, router]);
 
   // 에러 상태
   if (callbackError || error) {
