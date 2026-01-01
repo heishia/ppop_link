@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
+import { LoginRequiredModal } from "@/components/ui/LoginRequiredModal";
 import analyticsApi, { AnalyticsSummary } from "@/lib/api/analytics";
 import { useIsMobile } from "@/lib/hooks/useIsMobile";
 import { useAuthStore } from "@/store/authStore";
@@ -10,10 +11,11 @@ import { useAuthStore } from "@/store/authStore";
 export default function AnalyticsPage() {
   const router = useRouter();
   const isMobile = useIsMobile();
-  const { isAuthenticated, subscription, isLoading: authLoading } = useAuthStore();
+  const { isAuthenticated, subscription, isLoading: authLoading, startOAuthLogin } = useAuthStore();
   const [analytics, setAnalytics] = useState<AnalyticsSummary | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showLoginModal, setShowLoginModal] = useState(false);
 
   // PRO 권한 체크
   const isProUser = subscription?.plan === "PRO" && subscription?.status === "ACTIVE" && subscription?.hasAccess;
@@ -21,7 +23,8 @@ export default function AnalyticsPage() {
   useEffect(() => {
     // 인증 상태 확인
     if (!authLoading && !isAuthenticated) {
-      router.push("/login");
+      setShowLoginModal(true);
+      setIsLoading(false);
       return;
     }
 
@@ -56,7 +59,27 @@ export default function AnalyticsPage() {
 
       fetchAnalytics();
     }
-  }, [isAuthenticated, isProUser, authLoading, router]);
+  }, [isAuthenticated, isProUser, authLoading]);
+
+  // 로그인 모달이 표시 중일 때는 빈 화면 반환
+  if (showLoginModal) {
+    return (
+      <>
+        {/* 로그인 안내 모달 */}
+        <LoginRequiredModal
+          isOpen={showLoginModal}
+          onClose={() => {
+            setShowLoginModal(false);
+            router.push("/dashboard/links");
+          }}
+          onLogin={async () => {
+            setShowLoginModal(false);
+            await startOAuthLogin();
+          }}
+        />
+      </>
+    );
+  }
 
   if (authLoading || isLoading) {
     return (

@@ -63,6 +63,8 @@ export function Modal({ isOpen, onClose, children, title, className }: ModalProp
             <button
               onClick={onClose}
               className="text-gray-400 transition-colors hover:text-gray-600"
+              aria-label="모달 닫기"
+              title="닫기"
             >
               <svg
                 className="h-6 w-6"

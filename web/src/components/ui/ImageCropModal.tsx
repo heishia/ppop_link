@@ -146,10 +146,11 @@ export function ImageCropModal({
         {/* 줌 슬라이더 */}
         <div className="space-y-2">
           <div className="flex items-center justify-between text-sm text-gray-600">
-            <span>Zoom</span>
+            <label htmlFor="zoom-slider">Zoom</label>
             <span>{Math.round(zoom * 100)}%</span>
           </div>
           <input
+            id="zoom-slider"
             type="range"
             min={1}
             max={3}
@@ -157,6 +158,7 @@ export function ImageCropModal({
             value={zoom}
             onChange={(e) => setZoom(Number(e.target.value))}
             className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary"
+            aria-label="이미지 확대/축소"
           />
         </div>
 
