@@ -373,38 +373,62 @@ export const useLinksStore = create<LinksState>((set, get) => ({
   },
   
   syncLinksDataToServer: async () => {
+    const { isAuthenticated } = useAuthStore.getState();
+    if (!isAuthenticated) return;
+
     const tempLinks = get().links.filter((link: Link) => link.id.startsWith("temp_"));
     const tempSocialLinks = get().socialLinks.filter((link: SocialLink) => link.id.startsWith("temp_"));
-    
+
     if (tempLinks.length === 0 && tempSocialLinks.length === 0) return;
-    
+
     try {
-      // 임시 링크들을 서버로 전송
+      // 기존 링크 가져오기
+      await get().fetchLinks();
+      await get().fetchSocialLinks();
+
+      const existingLinks = get().links.filter((link: Link) => !link.id.startsWith("temp_"));
+      const existingSocialLinks = get().socialLinks.filter((link: SocialLink) => !link.id.startsWith("temp_"));
+
+      // 중복 체크 (URL 기준)
       for (const link of tempLinks) {
-        await get().createLink({
-          title: link.title,
-          url: link.url,
-        });
+        const isDuplicate = existingLinks.some(
+          (existing) => existing.url === link.url
+        );
+        if (!isDuplicate) {
+          await linksApi.createLink({
+            title: link.title,
+            url: link.url,
+          });
+        }
       }
-      
-      // 임시 소셜 링크들을 서버로 전송
+
+      // 소셜 링크 중복 체크 (플랫폼 기준)
       for (const socialLink of tempSocialLinks) {
-        await get().createSocialLink({
-          platform: socialLink.platform,
-          url: socialLink.url,
-        });
+        const isDuplicate = existingSocialLinks.some(
+          (existing) => existing.platform === socialLink.platform
+        );
+        if (!isDuplicate) {
+          await linksApi.createSocialLink({
+            platform: socialLink.platform,
+            url: socialLink.url,
+          });
+        }
       }
-      
-      // 동기화 성공 후 임시 링크 제거 및 세션 스토리지 정리
-      set((state) => ({
-        links: state.links.filter((link) => !link.id.startsWith("temp_")),
-        socialLinks: state.socialLinks.filter((link) => !link.id.startsWith("temp_")),
-      }));
-      
+
+      // sessionStorage 삭제
       get().clearLinksSessionStorage();
+
+      // 최신 데이터 다시 로드
+      await get().fetchLinks();
+      await get().fetchSocialLinks();
+
+      // 성공 이벤트 발생
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("migration-success"));
+      }
     } catch (error) {
       console.error("Failed to sync links data to server:", error);
-      // 에러가 발생해도 세션 스토리지는 유지 (재시도 가능)
+      throw error;
     }
   },
 }));

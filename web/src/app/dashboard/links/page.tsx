@@ -18,7 +18,6 @@ import {
   SOCIAL_PLATFORMS,
 } from "@/components/ui/SocialPlatformIcon";
 import { ImageCropModal } from "@/components/ui/ImageCropModal";
-import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { PASTEL_COLORS } from "@/lib/constants/colors";
 import { useIsMobile } from "@/lib/hooks/useIsMobile";
 import { ButtonStyle } from "@/lib/api/auth";
@@ -127,9 +126,6 @@ export default function LinksPage() {
   // 이미지 업로드 완료 상태
   const [imageUploadComplete, setImageUploadComplete] = useState(false);
 
-  // 로그인 확인 모달 상태
-  const [isLoginConfirmOpen, setIsLoginConfirmOpen] = useState(false);
-
   // 링크 복사 상태
   const [isCopied, setIsCopied] = useState(false);
 
@@ -221,6 +217,22 @@ export default function LinksPage() {
       loadLinksFromSessionStorage();
     }
   }, [isAuthenticated, fetchLinks, fetchSocialLinks, fetchProfile, loadFromSessionStorage, loadLinksFromSessionStorage]);
+
+  // 마이그레이션 성공 이벤트 리스너
+  useEffect(() => {
+    const handleMigrationSuccess = () => {
+      setProfileSaveMessage({
+        type: "success",
+        text: "🎉 TEST 데이터가 성공적으로 저장되었습니다!",
+      });
+      setTimeout(() => setProfileSaveMessage(null), 5000);
+    };
+
+    window.addEventListener("migration-success", handleMigrationSuccess);
+    return () => {
+      window.removeEventListener("migration-success", handleMigrationSuccess);
+    };
+  }, []);
 
   // 프로필 텍스트 필드만 의존성으로 사용 (이미지 업로드 시 formData 리셋 방지)
   // 이미지 URL 변경은 formData와 무관하므로 해당 필드들만 감시
@@ -346,12 +358,6 @@ export default function LinksPage() {
     } finally {
       setIsProfileSaving(false);
     }
-  };
-
-  // 로그인 확인 후 OAuth 로그인 시작
-  const handleLoginConfirm = async () => {
-    const { startOAuthLogin } = useAuthStore.getState();
-    await startOAuthLogin();
   };
 
   // 소셜 링크 추가 저장 (개별)
@@ -637,7 +643,7 @@ export default function LinksPage() {
                 <Button
                   variant="secondary"
                   className="text-sm w-full"
-                  onClick={() => fileInputRef.current?.click()}
+                  onClick={handleImageClick}
                   disabled={savingField === "profile_image"}
                 >
                   {savingField === "profile_image"
@@ -998,82 +1004,74 @@ export default function LinksPage() {
             <CardTitle className="text-sm">내 페이지 공유</CardTitle>
           </CardHeader>
           <CardContent className="p-4 pt-0 space-y-3">
-            {/* 공개 URL 표시 */}
-            <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
-              <div className="flex-1 min-w-0">
-                <p className="text-xs text-gray-500 mb-1">내 페이지 주소</p>
-                <p className="text-sm font-medium text-gray-900 truncate">
-                  {publicProfileUrl || "Loading..."}
-                </p>
-              </div>
-            </div>
-
-            {/* 버튼 영역 */}
-            <div className="flex gap-2">
-              <Button
-                variant="primary"
-                className="flex-1 text-sm whitespace-nowrap"
-                onClick={handleCopyLink}
-                disabled={!publicProfileUrl}
-              >
-                {isCopied ? (
-                  <>
-                    <svg
-                      className="w-4 h-4 mr-1.5 flex-shrink-0"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M5 13l4 4L19 7"
-                      />
-                    </svg>
-                    Copied!
-                  </>
-                ) : (
-                  <>
-                    <svg
-                      className="w-4 h-4 mr-1.5 flex-shrink-0"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
-                      />
-                    </svg>
-                    Copy Link
-                  </>
-                )}
-              </Button>
-              <Button
-                variant="secondary"
-                className="flex-1 text-sm whitespace-nowrap"
-                onClick={handleOpenMyPage}
-                disabled={!publicProfileUrl}
-              >
-                <svg
-                  className="w-4 h-4 mr-1.5 flex-shrink-0"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+            {!isAuthenticated ? (
+              // 상태 1: TEST 모드
+              <>
+                <div className="relative">
+                  <Input
+                    value=""
+                    readOnly
+                    placeholder="주소를 발급해주세요"
+                    className="text-sm text-gray-400 bg-gray-50"
                   />
-                </svg>
-                Open Page
-              </Button>
-            </div>
+                </div>
+                <Button
+                  variant="primary"
+                  className="w-full text-sm"
+                  onClick={handleGetShareLink}
+                >
+                  🔗 주소 받기
+                </Button>
+                <p className="text-[10px] text-gray-400 text-center">
+                  로그인이 필요합니다
+                </p>
+              </>
+            ) : publicProfileUrl ? (
+              // 상태 2: 로그인 + 주소 발급됨
+              <>
+                <Input
+                  value={publicProfileUrl}
+                  readOnly
+                  className="text-sm"
+                />
+                <div className="flex gap-2">
+                  <Button
+                    variant="primary"
+                    className="flex-1"
+                    onClick={handleCopyLink}
+                  >
+                    {isCopied ? "✓ 복사됨" : "복사"}
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    className="flex-1"
+                    onClick={handleOpenMyPage}
+                  >
+                    새 탭에서 열기
+                  </Button>
+                  <Button variant="tertiary" onClick={handleGetShareLink}>
+                    새로고침
+                  </Button>
+                </div>
+              </>
+            ) : (
+              // 상태 3: 로그인 + 주소 미발급
+              <>
+                <Input
+                  value=""
+                  readOnly
+                  placeholder="주소를 발급해주세요"
+                  className="text-sm text-gray-400 bg-gray-50"
+                />
+                <Button
+                  variant="secondary"
+                  className="w-full text-sm"
+                  disabled
+                >
+                  ✅ 주소 발급됨
+                </Button>
+              </>
+            )}
           </CardContent>
         </Card>
 
@@ -1203,17 +1201,6 @@ export default function LinksPage() {
             aspectRatio={1}
           />
         )}
-
-        {/* 로그인 확인 모달 */}
-        <ConfirmModal
-          isOpen={isLoginConfirmOpen}
-          onClose={() => setIsLoginConfirmOpen(false)}
-          onConfirm={handleLoginConfirm}
-          title="로그인이 필요합니다"
-          message="프로필을 저장하려면 로그인이 필요합니다.&#10;지금 로그인하시겠습니까?"
-          confirmText="로그인"
-          cancelText="취소"
-        />
       </div>
     );
   }
@@ -1239,87 +1226,79 @@ export default function LinksPage() {
         {/* 내 페이지 공유 카드 - 데스크톱 */}
         <Card>
           <CardContent className="p-4">
-            <div className="flex items-center justify-between gap-4">
-              {/* 왼쪽: URL 정보 */}
-              <div className="flex-1 min-w-0">
-                <h3 className="text-sm font-semibold text-gray-900 mb-1">
-                  내 페이지 공유
-                </h3>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-gray-500">내 페이지 주소:</span>
-                  <span className="text-sm font-medium text-primary truncate">
-                    {publicProfileUrl || "Loading..."}
-                  </span>
-                </div>
-              </div>
-
-              {/* 오른쪽: 버튼 영역 */}
-              <div className="flex gap-2 flex-shrink-0">
+            <h3 className="text-sm font-semibold text-gray-900 mb-3">
+              내 페이지 공유
+            </h3>
+            {!isAuthenticated ? (
+              // 상태 1: TEST 모드
+              <div className="space-y-2">
+                <Input
+                  value=""
+                  readOnly
+                  placeholder="주소를 발급해주세요"
+                  className="text-sm text-gray-400 bg-gray-50"
+                />
                 <Button
                   variant="primary"
-                  className="text-xs px-3 py-2 whitespace-nowrap"
-                  onClick={handleCopyLink}
-                  disabled={!publicProfileUrl}
+                  className="w-full text-sm"
+                  onClick={handleGetShareLink}
                 >
-                  {isCopied ? (
-                    <>
-                      <svg
-                        className="w-3.5 h-3.5 mr-1 flex-shrink-0"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M5 13l4 4L19 7"
-                        />
-                      </svg>
-                      Copied!
-                    </>
-                  ) : (
-                    <>
-                      <svg
-                        className="w-3.5 h-3.5 mr-1 flex-shrink-0"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
-                        />
-                      </svg>
-                      Copy Link
-                    </>
-                  )}
+                  🔗 주소 받기
                 </Button>
+                <p className="text-[10px] text-gray-400 text-center">
+                  로그인이 필요합니다
+                </p>
+              </div>
+            ) : publicProfileUrl ? (
+              // 상태 2: 로그인 + 주소 발급됨
+              <div className="space-y-2">
+                <Input
+                  value={publicProfileUrl}
+                  readOnly
+                  className="text-sm"
+                />
+                <div className="flex gap-2">
+                  <Button
+                    variant="primary"
+                    className="flex-1 text-xs"
+                    onClick={handleCopyLink}
+                  >
+                    {isCopied ? "✓ 복사됨" : "복사"}
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    className="flex-1 text-xs"
+                    onClick={handleOpenMyPage}
+                  >
+                    새 탭에서 열기
+                  </Button>
+                  <Button
+                    variant="tertiary"
+                    className="text-xs"
+                    onClick={handleGetShareLink}
+                  >
+                    새로고침
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              // 상태 3: 로그인 + 주소 미발급
+              <div className="space-y-2">
+                <Input
+                  value=""
+                  readOnly
+                  placeholder="주소를 발급해주세요"
+                  className="text-sm text-gray-400 bg-gray-50"
+                />
                 <Button
                   variant="secondary"
-                  className="text-xs px-3 py-2 whitespace-nowrap"
-                  onClick={handleOpenMyPage}
-                  disabled={!publicProfileUrl}
+                  className="w-full text-sm"
+                  disabled
                 >
-                  <svg
-                    className="w-3.5 h-3.5 mr-1 flex-shrink-0"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
-                    />
-                  </svg>
-                  Open Page
+                  ✅ 주소 발급됨
                 </Button>
               </div>
-            </div>
+            )}
           </CardContent>
         </Card>
 
@@ -1368,7 +1347,7 @@ export default function LinksPage() {
                     <Button
                       variant="secondary"
                       className="text-xs"
-                      onClick={() => fileInputRef.current?.click()}
+                      onClick={handleImageClick}
                       disabled={savingField === "profile_image"}
                     >
                       {savingField === "profile_image"
@@ -1827,17 +1806,6 @@ export default function LinksPage() {
           aspectRatio={1}
         />
       )}
-
-      {/* 로그인 확인 모달 */}
-      <ConfirmModal
-        isOpen={isLoginConfirmOpen}
-        onClose={() => setIsLoginConfirmOpen(false)}
-        onConfirm={handleLoginConfirm}
-        title="로그인이 필요합니다"
-        message="프로필을 저장하려면 로그인이 필요합니다.&#10;지금 로그인하시겠습니까?"
-        confirmText="로그인"
-        cancelText="취소"
-      />
     </div>
   );
 }
