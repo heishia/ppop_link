@@ -91,7 +91,11 @@ class Settings(BaseSettings):
     @property
     def cookie_samesite(self) -> str:
         """쿠키 SameSite 설정"""
-        return "lax"  # 개발/프로덕션 모두 lax 사용
+        # 프로덕션: 크로스 도메인을 위해 "none" 사용
+        # 개발: "lax" 사용 (localhost끼리는 같은 사이트)
+        if self.is_production:
+            return "none"
+        return "lax"
 
     @property
     def cookie_domain(self) -> str | None:
