@@ -102,6 +102,7 @@ async def oauth_callback(request: OAuthCallbackRequest, response: Response):
         httponly=True,
         secure=settings.cookie_secure,  # 개발: False, 프로덕션: True
         samesite=settings.cookie_samesite,  # "lax"
+        domain=settings.cookie_domain,  # 개발: None, 프로덕션: ".ppoplink.site"
         max_age=3600,  # 1시간
         path="/",
     )
@@ -111,6 +112,7 @@ async def oauth_callback(request: OAuthCallbackRequest, response: Response):
         httponly=True,
         secure=settings.cookie_secure,
         samesite=settings.cookie_samesite,
+        domain=settings.cookie_domain,
         max_age=2592000,  # 30일
         path="/",
     )
@@ -144,6 +146,7 @@ async def oauth_refresh(
         httponly=True,
         secure=settings.cookie_secure,
         samesite=settings.cookie_samesite,
+        domain=settings.cookie_domain,
         max_age=3600,
         path="/",
     )
@@ -153,6 +156,7 @@ async def oauth_refresh(
         httponly=True,
         secure=settings.cookie_secure,
         samesite=settings.cookie_samesite,
+        domain=settings.cookie_domain,
         max_age=2592000,
         path="/",
     )
@@ -173,8 +177,8 @@ async def logout(response: Response, current_user: User = Depends(get_current_us
     로그아웃 처리
     HttpOnly 쿠키 삭제
     """
-    response.delete_cookie("access_token", path="/")
-    response.delete_cookie("refresh_token", path="/")
+    response.delete_cookie("access_token", path="/", domain=settings.cookie_domain)
+    response.delete_cookie("refresh_token", path="/", domain=settings.cookie_domain)
     return MessageResponse(message="Logged out successfully")
 
 
