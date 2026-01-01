@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import Image from "next/image";
+import { User } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface AvatarProps {
@@ -17,7 +18,7 @@ export function Avatar({ src, alt, size = 120, className }: AvatarProps) {
   return (
     <div
       className={cn(
-        "relative overflow-hidden rounded-full bg-gradient-to-br from-primary/20 to-primary/40 flex-shrink-0",
+        "relative overflow-hidden rounded-full bg-gray-200 flex-shrink-0",
         className
       )}
       style={{ width: size, height: size }}
@@ -33,11 +34,14 @@ export function Avatar({ src, alt, size = 120, className }: AvatarProps) {
           onError={() => setImageError(true)}
         />
       ) : (
-        <div 
-          className="flex h-full w-full items-center justify-center font-extrabold text-primary"
-          style={{ fontSize: size * 0.4 }}
-        >
-          {alt.charAt(0).toUpperCase()}
+        <div className="flex h-full w-full items-center justify-center text-gray-400">
+          <User
+            style={{
+              width: size * 0.5,
+              height: size * 0.5,
+              strokeWidth: 1.5
+            }}
+          />
         </div>
       )}
     </div>

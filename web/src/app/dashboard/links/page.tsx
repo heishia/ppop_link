@@ -191,15 +191,31 @@ export default function LinksPage() {
   };
 
   const { isAuthenticated } = useAuthStore();
-  const { loadFromSessionStorage } = useProfileStore();
-  const { loadLinksFromSessionStorage } = useLinksStore();
+  const { loadFromSessionStorage, syncSessionDataToServer } = useProfileStore();
+  const { loadLinksFromSessionStorage, syncLinksDataToServer } = useLinksStore();
 
   useEffect(() => {
     if (isAuthenticated) {
-      // 로그인 상태면 서버에서 데이터 가져오기
-      fetchLinks();
-      fetchSocialLinks();
-      fetchProfile();
+      // 로그인 상태면 세션 데이터 동기화 후 서버에서 데이터 가져오기
+      const syncAndFetch = async () => {
+        try {
+          // 세션 스토리지 데이터를 서버로 동기화
+          console.log("Syncing session data to server...");
+          await syncSessionDataToServer();
+          await syncLinksDataToServer();
+          console.log("Session data sync completed");
+        } catch (error) {
+          console.error("Failed to sync session data:", error);
+          // 동기화 실패해도 계속 진행
+        }
+
+        // 서버에서 최신 데이터 가져오기
+        fetchLinks();
+        fetchSocialLinks();
+        fetchProfile();
+      };
+
+      syncAndFetch();
     } else {
       // 비로그인 상태면 세션 스토리지에서 데이터 로드
       const tempProfile = loadFromSessionStorage();
@@ -219,7 +235,7 @@ export default function LinksPage() {
       }
       loadLinksFromSessionStorage();
     }
-  }, [isAuthenticated, fetchLinks, fetchSocialLinks, fetchProfile, loadFromSessionStorage, loadLinksFromSessionStorage]);
+  }, [isAuthenticated, fetchLinks, fetchSocialLinks, fetchProfile, loadFromSessionStorage, loadLinksFromSessionStorage, syncSessionDataToServer, syncLinksDataToServer]);
 
   // 마이그레이션 성공 이벤트 리스너
   useEffect(() => {

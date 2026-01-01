@@ -105,18 +105,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         isAuthenticated: true,
         isLoading: false,
       });
-      
-      // 세션 스토리지 데이터를 서버로 동기화
-      try {
-        const { useProfileStore } = await import("./profileStore");
-        const { useLinksStore } = await import("./linksStore");
-        
-        await useProfileStore.getState().syncSessionDataToServer();
-        await useLinksStore.getState().syncLinksDataToServer();
-      } catch (error) {
-        console.error("Failed to sync session data to server:", error);
-      }
-      
+
       console.log("OAuth callback completed successfully");
     } catch (error: unknown) {
       // state 정리
