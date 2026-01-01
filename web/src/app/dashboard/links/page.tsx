@@ -104,7 +104,7 @@ export default function LinksPage() {
   // 프로필 저장 관련 상태
   const [isProfileSaving, setIsProfileSaving] = useState(false);
   const [profileSaveMessage, setProfileSaveMessage] = useState<{
-    type: "success" | "error";
+    type: "success" | "error" | "warning";
     text: string;
   } | null>(null);
 
@@ -307,17 +307,12 @@ export default function LinksPage() {
   const handleSaveProfile = async () => {
     if (isProfileSaving || !isProfileDirty) return;
 
-    // 비로그인 상태면 로그인 확인 모달 표시
-    if (!isAuthenticated) {
-      setIsLoginConfirmOpen(true);
-      return;
-    }
-
     setIsProfileSaving(true);
     setProfileSaveMessage(null);
     clearProfileError();
 
     try {
+      // sessionStorage 저장은 store에서 자동 처리됨
       await updateProfile({
         display_name: formData.display_name || undefined,
         bio: formData.bio || undefined,
@@ -325,22 +320,28 @@ export default function LinksPage() {
         button_style: formData.button_style,
       });
 
-      // 저장 성공 시 원본 데이터 업데이트
       setOriginalFormData({ ...formData });
-      setProfileSaveMessage({
-        type: "success",
-        text: "Profile saved successfully!",
-      });
 
-      // 3초 후 메시지 숨기기
-      setTimeout(() => {
-        setProfileSaveMessage(null);
-      }, 3000);
+      if (!isAuthenticated) {
+        // TEST 모드: warning 토스트
+        setProfileSaveMessage({
+          type: "warning",
+          text: "⚠️ 임시 저장됨. 로그인하여 영구 저장하세요!",
+        });
+      } else {
+        // 로그인 유저: success 토스트
+        setProfileSaveMessage({
+          type: "success",
+          text: "저장되었습니다!",
+        });
+      }
+
+      setTimeout(() => setProfileSaveMessage(null), 5000);
     } catch (error) {
       console.error("Failed to save profile:", error);
       setProfileSaveMessage({
         type: "error",
-        text: "Failed to save profile. Please try again.",
+        text: "저장 실패. 다시 시도해주세요.",
       });
     } finally {
       setIsProfileSaving(false);
@@ -433,10 +434,37 @@ export default function LinksPage() {
     }
   };
 
+  // 이미지 업로드 클릭 핸들러
+  const handleImageClick = () => {
+    if (!isAuthenticated) {
+      setProfileSaveMessage({
+        type: "warning",
+        text: "⚠️ 프로필 이미지는 로그인 후 업로드 가능합니다",
+      });
+      setTimeout(() => setProfileSaveMessage(null), 3000);
+      return;
+    }
+    fileInputRef.current?.click();
+  };
+
   // 파일 선택 시 크롭 모달 열기
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    // TEST 모드에서는 경고 표시
+    if (!isAuthenticated) {
+      setProfileSaveMessage({
+        type: "warning",
+        text: "⚠️ 프로필 이미지는 로그인 후 업로드 가능합니다",
+      });
+      setTimeout(() => setProfileSaveMessage(null), 3000);
+      // input 초기화
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+      return;
+    }
 
     // 파일을 Data URL로 변환하여 크롭 모달에 전달
     const reader = new FileReader();
@@ -574,8 +602,10 @@ export default function LinksPage() {
             <div
               className={`mx-4 mt-3 rounded p-2 text-sm ${
                 profileSaveMessage.type === "success"
-                  ? "bg-green-50 text-green-700"
-                  : "bg-red-50 text-red-700"
+                  ? "bg-green-50 text-green-700 border border-green-200"
+                  : profileSaveMessage.type === "error"
+                  ? "bg-red-50 text-red-700 border border-red-200"
+                  : "bg-yellow-50 text-yellow-700 border border-yellow-300"
               }`}
             >
               {profileSaveMessage.text}
@@ -602,6 +632,7 @@ export default function LinksPage() {
                   onChange={handleFileSelect}
                   accept="image/*"
                   className="hidden"
+                  aria-label="프로필 이미지 파일 선택"
                 />
                 <Button
                   variant="secondary"
@@ -676,6 +707,7 @@ export default function LinksPage() {
                     } ${isProfileSaving ? "opacity-50 cursor-not-allowed" : ""}`}
                     style={{ backgroundColor: color.hex }}
                     title={color.nameKo}
+                    aria-label={`배경색 ${color.nameKo} 선택`}
                   />
                 ))}
               </div>
@@ -703,6 +735,7 @@ export default function LinksPage() {
                         ? "border-primary ring-2 ring-primary/30"
                         : "border-gray-200"
                     } ${isProfileSaving ? "opacity-50 cursor-not-allowed" : ""}`}
+                    aria-label={`버튼 스타일 ${style.label} 선택`}
                   >
                     <div
                       className={`w-full rounded-md px-2 py-1.5 text-center ${BUTTON_STYLE_PREVIEW[style.id]}`}
@@ -777,11 +810,13 @@ export default function LinksPage() {
                             placeholder="https://..."
                             disabled={savingField === `edit-${link.id}`}
                             autoFocus
+                            aria-label={`${link.platform} URL 편집`}
                           />
                           <button
                             onClick={() => handleUpdateSocialLink(link.id)}
                             disabled={savingField === `edit-${link.id}`}
                             className="text-xs text-blue-600 font-medium"
+                            aria-label="소셜 링크 URL 저장"
                           >
                             {savingField === `edit-${link.id}` ? "..." : "OK"}
                           </button>
@@ -809,6 +844,7 @@ export default function LinksPage() {
                       <button
                         onClick={() => handleDeleteSocialLink(link.id)}
                         className="text-xs text-red-500 p-1"
+                        aria-label={`${link.platform} 삭제`}
                       >
                         X
                       </button>
@@ -845,6 +881,7 @@ export default function LinksPage() {
                               ? "border-gray-100 bg-gray-50 opacity-40"
                               : "border-gray-200 bg-white"
                         }`}
+                        aria-label={`${platform.name} ${isSelected ? '선택 해제' : '선택'}`}
                       >
                         <SocialPlatformIcon
                           platform={platform.id}
@@ -895,6 +932,7 @@ export default function LinksPage() {
                         placeholder={`https://${selected.platform}.com/...`}
                         className="flex-1 rounded border border-blue-300 bg-white px-2 py-1.5 text-sm"
                         disabled={isSavingThis}
+                        aria-label={`${selected.platform} URL 입력`}
                       />
                       {isSavingThis ? (
                         <span className="text-xs text-blue-500">...</span>
@@ -904,6 +942,7 @@ export default function LinksPage() {
                             handleTogglePlatform(selected.platform)
                           }
                           className="text-xs text-red-500 p-1"
+                          aria-label={`${selected.platform} 선택 취소`}
                         >
                           X
                         </button>
@@ -930,6 +969,7 @@ export default function LinksPage() {
                   ? "bg-gray-300 cursor-not-allowed"
                   : "bg-primary hover:bg-primary/90"
               }`}
+              aria-label="새 링크 추가"
             >
               + 추가
             </button>
@@ -1041,6 +1081,7 @@ export default function LinksPage() {
         <button
           onClick={() => setIsPreviewModalOpen(true)}
           className="fixed bottom-24 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 rounded-full bg-primary px-4 py-3 text-white shadow-lg hover:bg-primary/90 active:scale-95 transition-all"
+          aria-label="페이지 미리보기"
         >
           <svg
             className="w-5 h-5"
@@ -1133,6 +1174,7 @@ export default function LinksPage() {
             <button
               onClick={() => setIsPreviewModalOpen(false)}
               className="absolute top-4 right-4 z-20 flex h-10 w-10 items-center justify-center rounded-full bg-white/20 text-white backdrop-blur-sm transition-colors hover:bg-white/30"
+              aria-label="미리보기 닫기"
             >
               <svg
                 className="h-6 w-6"
@@ -1287,8 +1329,10 @@ export default function LinksPage() {
             <div
               className={`mx-4 mb-1 rounded p-1.5 text-xs ${
                 profileSaveMessage.type === "success"
-                  ? "bg-green-50 text-green-700"
-                  : "bg-red-50 text-red-700"
+                  ? "bg-green-50 text-green-700 border border-green-200"
+                  : profileSaveMessage.type === "error"
+                  ? "bg-red-50 text-red-700 border border-red-200"
+                  : "bg-yellow-50 text-yellow-700 border border-yellow-300"
               }`}
             >
               {profileSaveMessage.text}
@@ -1319,6 +1363,7 @@ export default function LinksPage() {
                       onChange={handleFileSelect}
                       accept="image/*"
                       className="hidden"
+                      aria-label="프로필 이미지 파일 선택"
                     />
                     <Button
                       variant="secondary"
@@ -1392,6 +1437,7 @@ export default function LinksPage() {
                         } ${isProfileSaving ? "opacity-50 cursor-not-allowed" : ""}`}
                         style={{ backgroundColor: color.hex }}
                         title={color.nameKo}
+                        aria-label={`배경색 ${color.nameKo} 선택`}
                       />
                     ))}
                   </div>
@@ -1419,6 +1465,7 @@ export default function LinksPage() {
                             ? "border-primary ring-1 ring-primary/30"
                             : "border-gray-200 hover:border-gray-300"
                         } ${isProfileSaving ? "opacity-50 cursor-not-allowed" : ""}`}
+                        aria-label={`버튼 스타일 ${style.label} 선택`}
                       >
                         <div
                           className={`w-full rounded px-2 py-1 text-center ${BUTTON_STYLE_PREVIEW[style.id]}`}
@@ -1475,11 +1522,13 @@ export default function LinksPage() {
                                 placeholder="https://... (Enter로 저장)"
                                 disabled={savingField === `edit-${link.id}`}
                                 autoFocus
+                                aria-label={`${link.platform} URL 편집`}
                               />
                               <button
                                 onClick={() => handleUpdateSocialLink(link.id)}
                                 disabled={savingField === `edit-${link.id}`}
                                 className="text-[10px] text-blue-600 hover:text-blue-700 disabled:opacity-50"
+                                aria-label="소셜 링크 URL 저장"
                               >
                                 {savingField === `edit-${link.id}`
                                   ? "..."
@@ -1491,6 +1540,7 @@ export default function LinksPage() {
                                   setEditingUrl("");
                                 }}
                                 className="text-[10px] text-gray-500 hover:text-gray-700"
+                                aria-label="편집 취소"
                               >
                                 X
                               </button>
@@ -1510,6 +1560,7 @@ export default function LinksPage() {
                                 setEditingUrl(link.url);
                               }}
                               className="text-[10px] text-gray-400 hover:text-gray-600"
+                              aria-label={`${link.platform} URL 편집`}
                             >
                               Edit
                             </button>
@@ -1524,6 +1575,7 @@ export default function LinksPage() {
                           <button
                             onClick={() => handleDeleteSocialLink(link.id)}
                             className="text-[10px] text-red-400 hover:text-red-600"
+                            aria-label={`${link.platform} 삭제`}
                           >
                             X
                           </button>
@@ -1567,6 +1619,7 @@ export default function LinksPage() {
                                 ? `SNS 아이콘은 최대 ${MAX_SOCIAL_ICONS}개까지 추가할 수 있습니다`
                                 : platform.name
                             }
+                            aria-label={`${platform.name} ${isSelected ? '선택 해제' : '선택'}`}
                           >
                             <SocialPlatformIcon
                               platform={platform.id}
@@ -1618,6 +1671,7 @@ export default function LinksPage() {
                             placeholder={`https://${selected.platform}.com/username (Enter로 저장)`}
                             className="flex-1 rounded border border-blue-300 bg-white px-2 py-1 text-xs focus:border-blue-500 focus:outline-none disabled:opacity-50"
                             disabled={isSavingThis}
+                            aria-label={`${selected.platform} URL 입력`}
                           />
                           {isSavingThis ? (
                             <span className="text-xs text-blue-500">
@@ -1629,6 +1683,7 @@ export default function LinksPage() {
                                 handleTogglePlatform(selected.platform)
                               }
                               className="text-xs text-red-500 hover:text-red-700"
+                              aria-label={`${selected.platform} 선택 취소`}
                             >
                               X
                             </button>
@@ -1651,6 +1706,7 @@ export default function LinksPage() {
                     ? "bg-primary text-white hover:bg-primary/90"
                     : "bg-gray-200 text-gray-400 cursor-not-allowed"
                 }`}
+                aria-label="프로필 저장"
               >
                 {isProfileSaving ? "..." : "Save"}
               </button>
@@ -1677,6 +1733,7 @@ export default function LinksPage() {
                   ? `링크는 최대 ${MAX_LINKS}개까지 추가할 수 있습니다`
                   : "새 링크 추가"
               }
+              aria-label="새 링크 추가"
             >
               + 추가
             </button>
