@@ -13,16 +13,17 @@ export const apiClient = axios.create({
 // Request interceptor: 쿠키는 자동으로 전송되므로 토큰 추가 불필요
 // (필요한 경우 다른 용도로 사용 가능)
 
-// OAuth 관련 경로 (인증 전 단계이므로 401 interceptor 우회)
-const OAUTH_PATHS = [
+// 인증 확인 경로 (401 시 리다이렉트하지 않고 조용히 실패)
+const AUTH_CHECK_PATHS = [
   "/api/auth/oauth/callback",
   "/api/auth/oauth/login",
+  "/api/auth/me",  // 사용자 정보 조회 (쿠키 없으면 조용히 실패)
 ];
 
-// 요청 URL이 OAuth 관련 경로인지 확인
-const isOAuthPath = (url: string | undefined): boolean => {
+// 요청 URL이 인증 확인 경로인지 확인
+const isAuthCheckPath = (url: string | undefined): boolean => {
   if (!url) return false;
-  return OAUTH_PATHS.some((path) => url.includes(path));
+  return AUTH_CHECK_PATHS.some((path) => url.includes(path));
 };
 
 // Response interceptor to handle token refresh
@@ -33,8 +34,8 @@ apiClient.interceptors.response.use(
       _retry?: boolean;
     };
 
-    // OAuth 관련 요청은 토큰 갱신 로직을 우회 (인증 전 단계)
-    if (isOAuthPath(originalRequest?.url)) {
+    // 인증 확인 경로는 토큰 갱신 로직을 우회 (조용히 실패)
+    if (isAuthCheckPath(originalRequest?.url)) {
       return Promise.reject(error);
     }
 
