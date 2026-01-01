@@ -3,12 +3,10 @@
 """
 
 from uuid import UUID
-from fastapi import APIRouter, Depends, Request
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi import APIRouter, Depends
 
 from backend.core.models import User
-from backend.auth.router import get_current_user
-from backend.core.security import extract_token_from_header
+from backend.auth.router import get_current_user, get_current_user_with_token
 from backend.links.schemas import (
     LinkCreateRequest,
     LinkUpdateRequest,
@@ -24,7 +22,6 @@ from backend.links.schemas import (
 from backend.links.service import link_service
 
 router = APIRouter()
-security = HTTPBearer()
 
 
 # Link Endpoints
@@ -37,11 +34,9 @@ async def get_links(current_user: User = Depends(get_current_user)):
 @router.post("", response_model=LinkResponse)
 async def create_link(
     request: LinkCreateRequest,
-    http_request: Request,
-    current_user: User = Depends(get_current_user),
-    credentials: HTTPAuthorizationCredentials = Depends(security)
+    current_user_with_token: tuple[User, str] = Depends(get_current_user_with_token)
 ):
-    access_token = credentials.credentials if credentials else None
+    current_user, access_token = current_user_with_token
     link = await link_service.create_link(current_user.id, request, access_token)
     return LinkResponse(data=link)
 
@@ -87,10 +82,9 @@ async def get_social_links(current_user: User = Depends(get_current_user)):
 @social_router.post("", response_model=SocialLinkResponse)
 async def create_social_link(
     request: SocialLinkCreateRequest,
-    current_user: User = Depends(get_current_user),
-    credentials: HTTPAuthorizationCredentials = Depends(security)
+    current_user_with_token: tuple[User, str] = Depends(get_current_user_with_token)
 ):
-    access_token = credentials.credentials if credentials else None
+    current_user, access_token = current_user_with_token
     social_link = await link_service.create_social_link(current_user.id, request, access_token)
     return SocialLinkResponse(data=social_link)
 

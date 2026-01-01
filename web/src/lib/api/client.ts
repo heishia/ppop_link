@@ -55,6 +55,11 @@ apiClient.interceptors.response.use(
 
     // 인증 확인 경로는 토큰 갱신 로직을 우회 (조용히 실패)
     if (isAuthCheckPath(originalRequest?.url)) {
+      // 콘솔 에러 메시지 억제 (정상적인 401 응답)
+      if (error.response?.status === 401) {
+        // 401은 비로그인 상태에서 정상이므로 에러 로그 출력하지 않음
+        return Promise.reject(error);
+      }
       return Promise.reject(error);
     }
 
