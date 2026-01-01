@@ -29,7 +29,7 @@ export function Header() {
   return (
     <header className="flex h-14 items-center justify-end border-b border-gray-200 bg-white px-4">
       <div className="flex items-center gap-3">
-        {/* 비로그인 상태 표시 */}
+        {/* TEST 모드 배지 (비로그인 시) */}
         {!isAuthenticated && (
           <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 border border-blue-200 rounded-md">
             <span className="text-xs font-semibold text-blue-600">TEST 모드</span>
@@ -37,24 +37,20 @@ export function Header() {
         )}
 
         {/* 프로필 사진 (동그라미) */}
-        {isAuthenticated ? (
+        {isAuthenticated && (
           <Avatar
             src={profile?.profile_image_url || "/avatar-placeholder.jpg"}
             alt={profile?.username || "User"}
             size={32}
           />
-        ) : (
-          <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold text-sm">
-            T
-          </div>
         )}
 
-        {/* 유저 이름 (1줄로 표시) */}
-        <span className="text-sm font-medium text-gray-700 truncate max-w-[120px]">
-          {isAuthenticated 
-            ? (profile?.display_name || profile?.username || "User")
-            : "TEST"}
-        </span>
+        {/* 유저 이름 (로그인 시에만 표시) */}
+        {isAuthenticated && (
+          <span className="text-sm font-medium text-gray-700 truncate max-w-[120px]">
+            {profile?.display_name || profile?.username || "User"}
+          </span>
+        )}
 
         {/* 로그아웃 버튼 (로그인 상태일 때만) */}
         {isAuthenticated && (
