@@ -31,7 +31,7 @@ class OAuthTokenResponse(BaseModel):
 class AuthResponse(BaseModel):
     """인증 응답 (토큰 + 사용자 정보)"""
     success: bool = True
-    data: Token
+    data: Optional[Token] = None
     user: User
 
 
