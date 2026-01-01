@@ -4,7 +4,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8005";
 
 export const apiClient = axios.create({
   baseURL: API_URL,
-  withCredentials: true,  // 쿠키 자동 전송 활성화
+  withCredentials: true, // 쿠키 자동 전송 활성화
   headers: {
     "Content-Type": "application/json",
   },
@@ -17,8 +17,8 @@ export const apiClient = axios.create({
 const AUTH_CHECK_PATHS = [
   "/api/auth/oauth/callback",
   "/api/auth/oauth/login",
-  "/api/auth/oauth/refresh",  // 리프레시 엔드포인트도 추가하여 무한 루프 방지
-  "/api/auth/me",  // 사용자 정보 조회 (쿠키 없으면 조용히 실패)
+  "/api/auth/oauth/refresh", // 리프레시 엔드포인트도 추가하여 무한 루프 방지
+  "/api/auth/me", // 사용자 정보 조회 (쿠키 없으면 조용히 실패)
 ];
 
 // 요청 URL이 인증 확인 경로인지 확인
@@ -82,17 +82,27 @@ apiClient.interceptors.response.use(
         // 갱신 성공
         processQueue(null);
         isRefreshing = false;
-        
+
         // 원래 요청 재시도
         return apiClient(originalRequest);
       } catch (refreshError) {
         // 갱신 실패
         processQueue(refreshError as AxiosError);
         isRefreshing = false;
-        
-        // 로그인 페이지로 리다이렉트 (한 번만)
+
+        // 로그인 페이지로 리다이렉트
+        // 단, 이미 로그인 관련 페이지나 공개 페이지에 있으면 리다이렉트하지 않음
         if (typeof window !== "undefined") {
-          window.location.href = "/login";
+          const currentPath = window.location.pathname;
+          const publicPaths = ["/", "/login", "/register", "/auth/callback"];
+          const isPublicPage = publicPaths.some(
+            (path) => currentPath === path || currentPath.startsWith(path)
+          );
+
+          if (!isPublicPage) {
+            console.log("Authentication failed, redirecting to login...");
+            window.location.href = "/login";
+          }
         }
         return Promise.reject(refreshError);
       }

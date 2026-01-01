@@ -15,8 +15,14 @@ export default function Home() {
   // 로그인 상태 확인 (마운트 시에만)
   useEffect(() => {
     const init = async () => {
-      await loadUser();
-      setIsLoading(false);
+      try {
+        await loadUser();
+      } catch (error) {
+        // 랜딩 페이지에서는 401 에러를 조용히 무시
+        console.log("Not authenticated, showing landing page");
+      } finally {
+        setIsLoading(false);
+      }
     };
     init();
     // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -95,10 +95,10 @@ class Settings(BaseSettings):
 
     @property
     def cookie_domain(self) -> str | None:
-        """쿠키 Domain 설정 (프로덕션에서만 .ppoplink.site)"""
-        if self.is_production:
-            return ".ppoplink.site"  # 서브도메인 포함
-        return None  # 개발 환경에서는 domain 미설정
+        """쿠키 Domain 설정"""
+        # Railway 환경에서는 domain을 명시하지 않는 것이 좋음
+        # 브라우저가 자동으로 현재 도메인을 사용
+        return None
 
     model_config = SettingsConfigDict(
         # 개발: .env.local, 프로덕션: .env (또는 환경변수)
