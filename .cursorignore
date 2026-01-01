@@ -1,0 +1,39 @@
+# 가상환경 / 패키지
+.venv/
+venv/
+env/
+node_modules/
+
+
+#데이터베이스 (테스트)
+database/
+# 테스트/커버리지 결과
+.coverage
+coverage.xml
+htmlcov/
+
+# 도커 관련 잡파일
+docker-compose.yml
+Dockerfile
+.dockerignore
+
+# 문서·가이드 (원하면 남겨도 됨)
+docs/
+IMPLEMENTATION_*/
+IP_TRACKING_GUIDE*/
+LOGOUT_FIX_SUMMARY*/
+SECURITY_IMPLEMENT*/
+SEO_CHECKLIST*/
+실행안내파일*/
+
+# 로그·임시
+*.log
+*.tmp
+
+# 환경설정 샘플 (진짜 .env 는 어차피 gitignore일 것)
+env.example
+
+# 각종 도구 설정(필요 없으면)
+.vscode/
+.claude/
+.cursor/plans/

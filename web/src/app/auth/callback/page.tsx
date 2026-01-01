@@ -61,7 +61,8 @@ function AuthCallbackContent() {
     };
 
     processCallback();
-  }, [searchParams, router]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // 에러 상태
   if (callbackError || error) {

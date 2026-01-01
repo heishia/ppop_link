@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuthStore } from "@/store/authStore";
@@ -8,8 +8,14 @@ import { useAuthStore } from "@/store/authStore";
 export default function LoginPage() {
   const router = useRouter();
   const { startOAuthLogin, error, isAuthenticated } = useAuthStore();
+  const hasRedirectedRef = useRef(false);
 
   useEffect(() => {
+    // 이미 리다이렉트를 시도했으면 다시 시도하지 않음
+    if (hasRedirectedRef.current) {
+      return;
+    }
+
     // 이미 로그인되어 있으면 대시보드로 이동
     if (isAuthenticated) {
       router.push("/dashboard");
@@ -18,15 +24,18 @@ export default function LoginPage() {
 
     // 로그인되어 있지 않으면 바로 PPOP Auth로 리다이렉트
     const redirectToAuth = async () => {
+      hasRedirectedRef.current = true;
       try {
         await startOAuthLogin();
       } catch (err) {
         console.error("Failed to redirect to PPOP Auth:", err);
+        // 에러 발생 시 플래그 리셋하여 재시도 허용
+        hasRedirectedRef.current = false;
       }
     };
 
     redirectToAuth();
-  }, [isAuthenticated, router, startOAuthLogin]);
+  }, [isAuthenticated, router]);
 
   // 에러가 있으면 에러 화면 표시
   if (error) {
