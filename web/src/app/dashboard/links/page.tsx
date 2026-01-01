@@ -1240,85 +1240,6 @@ export default function LinksPage() {
           </div>
         )}
 
-        {/* 내 페이지 공유 카드 - 데스크톱 */}
-        <Card>
-          <CardContent className="p-4">
-            <h3 className="text-sm font-semibold text-gray-900 mb-3">
-              내 페이지 공유
-            </h3>
-            {!isAuthenticated ? (
-              // 상태 1: TEST 모드
-              <div className="space-y-2">
-                <Input
-                  value=""
-                  readOnly
-                  placeholder="주소를 발급해주세요"
-                  className="text-sm text-gray-400 bg-gray-50"
-                />
-                <Button
-                  variant="primary"
-                  className="w-full text-sm"
-                  onClick={handleGetShareLink}
-                >
-                  🔗 주소 받기
-                </Button>
-                <p className="text-[10px] text-gray-400 text-center">
-                  로그인이 필요합니다
-                </p>
-              </div>
-            ) : publicProfileUrl ? (
-              // 상태 2: 로그인 + 주소 발급됨
-              <div className="space-y-2">
-                <Input
-                  value={publicProfileUrl}
-                  readOnly
-                  className="text-sm"
-                />
-                <div className="flex gap-2">
-                  <Button
-                    variant="primary"
-                    className="flex-1 text-xs"
-                    onClick={handleCopyLink}
-                  >
-                    {isCopied ? "✓ 복사됨" : "복사"}
-                  </Button>
-                  <Button
-                    variant="secondary"
-                    className="flex-1 text-xs"
-                    onClick={handleOpenMyPage}
-                  >
-                    새 탭에서 열기
-                  </Button>
-                  <Button
-                    variant="tertiary"
-                    className="text-xs"
-                    onClick={handleGetShareLink}
-                  >
-                    새로고침
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              // 상태 3: 로그인 + 주소 미발급
-              <div className="space-y-2">
-                <Input
-                  value=""
-                  readOnly
-                  placeholder="주소를 발급해주세요"
-                  className="text-sm text-gray-400 bg-gray-50"
-                />
-                <Button
-                  variant="secondary"
-                  className="w-full text-sm"
-                  disabled
-                >
-                  ✅ 주소 발급됨
-                </Button>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
         {/* 프로필 설정 카드 */}
         <Card>
           {profileSaveMessage && (
@@ -1747,6 +1668,85 @@ export default function LinksPage() {
                 {links.map((link) => (
                   <LinkItem key={link.id} link={link} />
                 ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* 내 페이지 공유 카드 - 데스크톱 (맨 하단) */}
+        <Card>
+          <CardContent className="p-4">
+            <h3 className="text-sm font-semibold text-gray-900 mb-3">
+              내 페이지 공유
+            </h3>
+            {!isAuthenticated ? (
+              // 상태 1: TEST 모드
+              <div className="space-y-2">
+                <Input
+                  value=""
+                  readOnly
+                  placeholder="주소를 발급해주세요"
+                  className="text-sm text-gray-400 bg-gray-50"
+                />
+                <Button
+                  variant="primary"
+                  className="w-full text-sm"
+                  onClick={handleGetShareLink}
+                >
+                  🔗 주소 받기
+                </Button>
+                <p className="text-[10px] text-gray-400 text-center">
+                  로그인이 필요합니다
+                </p>
+              </div>
+            ) : publicProfileUrl ? (
+              // 상태 2: 로그인 + 주소 발급됨
+              <div className="space-y-2">
+                <Input
+                  value={publicProfileUrl}
+                  readOnly
+                  className="text-sm"
+                />
+                <div className="flex gap-2">
+                  <Button
+                    variant="primary"
+                    className="flex-1 text-xs"
+                    onClick={handleCopyLink}
+                  >
+                    {isCopied ? "✓ 복사됨" : "복사"}
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    className="flex-1 text-xs"
+                    onClick={handleOpenMyPage}
+                  >
+                    새 탭에서 열기
+                  </Button>
+                  <Button
+                    variant="tertiary"
+                    className="text-xs"
+                    onClick={handleGetShareLink}
+                  >
+                    새로고침
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              // 상태 3: 로그인 + 주소 미발급
+              <div className="space-y-2">
+                <Input
+                  value=""
+                  readOnly
+                  placeholder="주소를 발급해주세요"
+                  className="text-sm text-gray-400 bg-gray-50"
+                />
+                <Button
+                  variant="secondary"
+                  className="w-full text-sm"
+                  disabled
+                >
+                  ✅ 주소 발급됨
+                </Button>
               </div>
             )}
           </CardContent>
