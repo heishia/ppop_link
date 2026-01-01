@@ -18,6 +18,7 @@ import {
   SOCIAL_PLATFORMS,
 } from "@/components/ui/SocialPlatformIcon";
 import { ImageCropModal } from "@/components/ui/ImageCropModal";
+import { LoginRequiredModal } from "@/components/ui/LoginRequiredModal";
 import { PASTEL_COLORS } from "@/lib/constants/colors";
 import { useIsMobile } from "@/lib/hooks/useIsMobile";
 import { ButtonStyle } from "@/lib/api/auth";
@@ -132,12 +133,14 @@ export default function LinksPage() {
   // 공개 프로필 URL 상태
   const [publicProfileUrl, setPublicProfileUrl] = useState("");
 
+  // 로그인 필요 모달 상태
+  const [showLoginModal, setShowLoginModal] = useState(false);
+
   // 공유 링크 발급 핸들러 (로그인 필요)
   const handleGetShareLink = async () => {
     if (!isAuthenticated) {
-      // 비로그인 상태면 로그인 페이지로 이동
-      const { startOAuthLogin } = useAuthStore.getState();
-      await startOAuthLogin();
+      // 비로그인 상태면 로그인 모달 표시
+      setShowLoginModal(true);
       return;
     }
 
@@ -546,6 +549,13 @@ export default function LinksPage() {
 
   // 모바일 미리보기 모달 상태
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
+
+  // 로그인 모달에서 "로그인 하기" 클릭 핸들러
+  const handleLoginFromModal = async () => {
+    setShowLoginModal(false);
+    const { startOAuthLogin } = useAuthStore.getState();
+    await startOAuthLogin();
+  };
 
   // 미리보기용 소셜 링크 (기존 + 선택 중인 것 합침, 최대 5개까지만)
   const previewSocialLinks = [
@@ -1201,6 +1211,13 @@ export default function LinksPage() {
             aspectRatio={1}
           />
         )}
+
+        {/* 로그인 필요 모달 */}
+        <LoginRequiredModal
+          isOpen={showLoginModal}
+          onClose={() => setShowLoginModal(false)}
+          onLogin={handleLoginFromModal}
+        />
       </div>
     );
   }
@@ -1806,6 +1823,13 @@ export default function LinksPage() {
           aspectRatio={1}
         />
       )}
+
+      {/* 로그인 필요 모달 */}
+      <LoginRequiredModal
+        isOpen={showLoginModal}
+        onClose={() => setShowLoginModal(false)}
+        onLogin={handleLoginFromModal}
+      />
     </div>
   );
 }

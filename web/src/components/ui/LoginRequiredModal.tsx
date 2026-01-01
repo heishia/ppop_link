@@ -44,7 +44,9 @@ export function LoginRequiredModal({
             로그인이 필요합니다
           </h3>
           <p className="mt-2 text-sm text-gray-600">
-            통계 기능은 로그인 후 이용할 수 있습니다.
+            주소를 발급받으려면 로그인이 필요합니다.
+            <br />
+            로그인하시겠습니까?
           </p>
         </div>
 
