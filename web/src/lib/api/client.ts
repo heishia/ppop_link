@@ -4,26 +4,14 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8005";
 
 export const apiClient = axios.create({
   baseURL: API_URL,
+  withCredentials: true,  // 쿠키 자동 전송 활성화
   headers: {
     "Content-Type": "application/json",
   },
 });
 
-// Request interceptor to add auth token
-apiClient.interceptors.request.use(
-  (config: InternalAxiosRequestConfig) => {
-    if (typeof window !== "undefined") {
-      const token = localStorage.getItem("access_token");
-      if (token && config.headers) {
-        config.headers.Authorization = `Bearer ${token}`;
-      }
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
+// Request interceptor: 쿠키는 자동으로 전송되므로 토큰 추가 불필요
+// (필요한 경우 다른 용도로 사용 가능)
 
 // OAuth 관련 경로 (인증 전 단계이므로 401 interceptor 우회)
 const OAUTH_PATHS = [
@@ -54,26 +42,17 @@ apiClient.interceptors.response.use(
       originalRequest._retry = true;
 
       try {
-        const refreshToken = localStorage.getItem("refresh_token");
-        if (refreshToken) {
-          const response = await axios.post(`${API_URL}/api/auth/oauth/refresh`, {
-            refresh_token: refreshToken,
-          });
+        // refresh_token은 쿠키에서 자동 전송됨
+        await axios.post(
+          `${API_URL}/api/auth/oauth/refresh`,
+          {},
+          { withCredentials: true }
+        );
 
-          const { access_token, refresh_token } = response.data.data;
-          localStorage.setItem("access_token", access_token);
-          localStorage.setItem("refresh_token", refresh_token);
-
-          if (originalRequest.headers) {
-            originalRequest.headers.Authorization = `Bearer ${access_token}`;
-          }
-
-          return apiClient(originalRequest);
-        }
+        // 갱신 성공 시 원래 요청 재시도
+        return apiClient(originalRequest);
       } catch (refreshError) {
-        // Refresh failed, clear tokens and redirect to login
-        localStorage.removeItem("access_token");
-        localStorage.removeItem("refresh_token");
+        // 갱신 실패 시 로그인 페이지로 리다이렉트
         if (typeof window !== "undefined") {
           window.location.href = "/login";
         }

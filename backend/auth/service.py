@@ -245,10 +245,12 @@ class AuthService:
                 logger.info(f"BASIC subscription activated for user: {email}")
             except Exception as e:
                 logger.error(f"Failed to activate BASIC subscription for {email}: {e}")
-                # 구독 활성화 실패 시 에러 반환
-                raise DatabaseError(
-                    detail="User created but subscription activation failed. Please contact support."
-                )
+                # 구독 활성화 실패해도 사용자는 생성됨 (경고만 로그)
+                # 나중에 첫 API 호출 시 구독 상태 확인하고 재시도 가능
+                logger.warning(f"User {ppop_user_id} created without BASIC subscription activation")
+                # TODO: 백그라운드 작업으로 구독 활성화 재시도
+                # from backend.tasks import retry_subscription_activation
+                # retry_subscription_activation.delay(user_id=str(ppop_user_id), email=email)
         
         logger.info(f"User created from PPOP Auth: {user.username}, public_link_id: {user.public_link_id}")
         return user

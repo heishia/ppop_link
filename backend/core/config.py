@@ -82,7 +82,17 @@ class Settings(BaseSettings):
     def is_production(self) -> bool:
         """Check if running in production mode"""
         return self.APP_ENV == "prod"
-    
+
+    @property
+    def cookie_secure(self) -> bool:
+        """쿠키 Secure 플래그 (프로덕션에서만 True)"""
+        return self.is_production
+
+    @property
+    def cookie_samesite(self) -> str:
+        """쿠키 SameSite 설정"""
+        return "lax"  # 개발/프로덕션 모두 lax 사용
+
     model_config = SettingsConfigDict(
         # 개발: .env.local, 프로덕션: .env (또는 환경변수)
         env_file=".env.local" if os.getenv("APP_ENV", "dev") == "dev" else ".env",

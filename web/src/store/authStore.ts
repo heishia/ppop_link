@@ -92,14 +92,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       console.log("Calling oauthCallback API...");
       const response = await authApi.oauthCallback(data);
       console.log("OAuth callback API response received");
-      
-      const { access_token, refresh_token } = response.data;
-      const { user } = response;
 
-      // 토큰 저장
-      localStorage.setItem("access_token", access_token);
-      localStorage.setItem("refresh_token", refresh_token);
-      console.log("Tokens saved, user:", user.username);
+      const { user } = response;
+      // 토큰은 서버에서 HttpOnly 쿠키로 자동 설정됨
+      console.log("User authenticated, tokens set in cookies, user:", user.username);
 
       // state 정리
       sessionStorage.removeItem(OAUTH_STATE_KEY);
@@ -146,9 +142,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     } catch (error) {
       console.error("Logout error:", error);
     } finally {
-      // 토큰 및 상태 정리
-      localStorage.removeItem("access_token");
-      localStorage.removeItem("refresh_token");
+      // 쿠키는 서버에서 삭제됨
       sessionStorage.removeItem(OAUTH_STATE_KEY);
       set({
         user: null,
@@ -156,7 +150,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         error: null,
         subscription: null,
       });
-      
+
       // 랜딩 페이지로 리다이렉트 (페이지 새로고침으로 상태 완전 초기화)
       if (typeof window !== "undefined") {
         window.location.href = "/";
@@ -165,27 +159,20 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   loadUser: async () => {
-    const token = localStorage.getItem("access_token");
-    if (!token) {
-      set({ isAuthenticated: false, isLoading: false });
-      return;
-    }
-
     set({ isLoading: true });
     try {
+      // 쿠키에 토큰이 있으면 서버에서 자동으로 검증
       const response = await authApi.getMe();
       set({
         user: response.data,
         isAuthenticated: true,
         isLoading: false,
       });
-      
+
       // 구독 상태도 함께 로드
       await get().loadSubscription();
     } catch {
-      // 토큰이 유효하지 않으면 정리
-      localStorage.removeItem("access_token");
-      localStorage.removeItem("refresh_token");
+      // 쿠키가 없거나 유효하지 않으면 로그아웃 상태
       set({
         user: null,
         isAuthenticated: false,
@@ -196,13 +183,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   loadSubscription: async () => {
-    const token = localStorage.getItem("access_token");
-    if (!token) {
-      set({ subscription: null });
-      return;
-    }
-
     try {
+      // 쿠키에 토큰이 있으면 서버에서 자동으로 검증
       const subscription = await authApi.getSubscriptionStatus();
       set({ subscription });
     } catch (error) {

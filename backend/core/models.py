@@ -62,9 +62,7 @@ class UserBase(BaseModel):
     display_name: Optional[str] = Field(None, max_length=100)
     bio: Optional[str] = Field(None, max_length=500)
 
-
-class UserCreate(UserBase):
-    password: str = Field(..., min_length=8)
+# UserCreate 모델 완전 삭제 (OAuth 전용)
 
 
 class ButtonStyle(str, Enum):
@@ -104,9 +102,7 @@ class UserWithAuth(User):
     """JWT 정보를 포함한 사용자 (API 응답용, 런타임 전용)"""
     is_admin: bool = False  # JWT에서 추출, DB에는 저장 안 함
 
-
-class UserInDB(User):
-    password_hash: str
+# UserInDB 모델 완전 삭제 (OAuth 전용이므로 password_hash 불필요)
 
 
 # User Plan Models

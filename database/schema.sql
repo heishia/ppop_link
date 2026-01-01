@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS users (
     username VARCHAR(50) UNIQUE NOT NULL,
     email VARCHAR(255) UNIQUE NOT NULL,
     phone_number VARCHAR(20) UNIQUE,              -- 인증된 전화번호 (PPOP Auth에서 검증됨, E.164 형식)
-    password_hash VARCHAR(255) NOT NULL,
+    -- password_hash 완전 제거 (PPOP Auth OAuth 전용, 향후 다른 인증 방식 추가 계획 없음)
     display_name VARCHAR(100),
     bio VARCHAR(500),
     profile_image_url VARCHAR(500),
