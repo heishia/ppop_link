@@ -33,9 +33,9 @@ const BUTTON_STYLES: { id: ButtonStyle; label: string; description: string }[] =
 
 // 버튼 스타일 미리보기용 클래스
 const BUTTON_STYLE_PREVIEW: Record<ButtonStyle, string> = {
-  default: "bg-primary text-white text-[10px]",
-  outline: "bg-white text-gray-900 border border-gray-900 text-[10px]",
-  filled: "bg-gray-900 text-white text-[10px]",
+  default: "bg-primary text-white text-[9px]",
+  outline: "bg-white text-gray-900 border border-gray-900 text-[9px]",
+  filled: "bg-gray-900 text-white text-[9px]",
 };
 
 // SNS 아이콘 최대 개수 제한
@@ -621,7 +621,7 @@ export default function LinksPage() {
   // ========== 모바일 레이아웃 ==========
   if (isMobile) {
     return (
-      <div className="px-4 py-3 space-y-4 pb-24">
+      <div className="px-3 py-3 space-y-3 pb-24">
         {(error || profileError) && (
           <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600">
             {error || profileError}
@@ -643,9 +643,9 @@ export default function LinksPage() {
               {profileSaveMessage.text}
             </div>
           )}
-          <CardContent className="p-4 space-y-4">
+          <CardContent className="p-3 space-y-3">
             {/* 프로필 이미지 영역 */}
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
               {isAuthenticated ? (
                 <Avatar
                   src={profile?.profile_image_url || "/avatar-placeholder.jpg"}
@@ -657,7 +657,7 @@ export default function LinksPage() {
                   T
                 </div>
               )}
-              <div className="flex-1">
+              <div className="flex-1 min-w-0">
                 <input
                   type="file"
                   ref={fileInputRef}
@@ -668,7 +668,7 @@ export default function LinksPage() {
                 />
                 <Button
                   variant="secondary"
-                  className="text-sm w-full"
+                  className="text-sm w-full py-2.5"
                   onClick={handleImageClick}
                   disabled={savingField === "profile_image"}
                 >
@@ -676,12 +676,12 @@ export default function LinksPage() {
                     ? "Uploading..."
                     : "Upload Photo"}
                 </Button>
-                <div className="mt-1 flex items-center gap-2">
-                  <p className="text-xs text-gray-500">
+                <div className="mt-1.5 flex items-center justify-center gap-2">
+                  <p className="text-[10px] text-gray-500">
                     JPG, PNG, GIF (max 5MB)
                   </p>
                   {imageUploadComplete && (
-                    <span className="text-xs text-green-600 font-medium">
+                    <span className="text-[10px] text-green-600 font-medium">
                       Done!
                     </span>
                   )}
@@ -724,14 +724,14 @@ export default function LinksPage() {
               <label className="mb-2 block text-sm font-semibold text-gray-700">
                 배경 색상
               </label>
-              <div className="grid grid-cols-6 gap-2">
+              <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
                 {PASTEL_COLORS.map((color) => (
                   <button
                     key={color.id}
                     type="button"
                     onClick={() => handleBackgroundColorChange(color.hex)}
                     disabled={isProfileSaving}
-                    className={`h-10 w-10 rounded-lg border-2 transition-all ${
+                    className={`h-12 w-full rounded-lg border-2 transition-all ${
                       formData.background_color.toLowerCase() ===
                       color.hex.toLowerCase()
                         ? "border-primary ring-2 ring-primary/30 scale-110"
@@ -762,7 +762,7 @@ export default function LinksPage() {
                       }))
                     }
                     disabled={isProfileSaving}
-                    className={`flex flex-col items-center gap-1.5 rounded-lg border-2 p-3 transition-all ${
+                    className={`flex flex-col items-center gap-1.5 rounded-lg border-2 p-2 transition-all ${
                       formData.button_style === style.id
                         ? "border-primary ring-2 ring-primary/30"
                         : "border-gray-200"
@@ -772,9 +772,9 @@ export default function LinksPage() {
                     <div
                       className={`w-full rounded-md px-2 py-1.5 text-center ${BUTTON_STYLE_PREVIEW[style.id]}`}
                     >
-                      Button
+                      Btn
                     </div>
-                    <span className="text-xs font-medium text-gray-700">
+                    <span className="text-[10px] font-medium text-gray-700">
                       {style.label}
                     </span>
                   </button>
@@ -788,7 +788,7 @@ export default function LinksPage() {
                 variant="primary"
                 onClick={handleSaveProfile}
                 disabled={isProfileSaving || !isProfileDirty}
-                className="w-full"
+                className="w-full py-2.5 text-sm font-medium"
               >
                 {isProfileSaving ? "Saving..." : "Save Profile"}
               </Button>
@@ -798,12 +798,12 @@ export default function LinksPage() {
 
         {/* SNS 아이콘 설정 카드 - 모바일 */}
         <Card>
-          <CardHeader className="py-3 px-4">
+          <CardHeader className="py-2.5 px-3">
             <CardTitle className="text-sm">
               SNS ({socialLinks.length}/{MAX_SOCIAL_ICONS})
             </CardTitle>
           </CardHeader>
-          <CardContent className="p-4 pt-0 space-y-3">
+          <CardContent className="p-3 pt-0 space-y-3">
             {/* 기존 소셜 링크 목록 */}
             {socialLinks.length > 0 && (
               <div className="space-y-2">
@@ -895,7 +895,7 @@ export default function LinksPage() {
                     <span className="text-red-500">(MAX)</span>
                   )}
                 </p>
-                <div className="grid grid-cols-5 gap-2">
+                <div className="grid grid-cols-4 sm:grid-cols-5 gap-2">
                   {availablePlatforms.map((platform) => {
                     const isSelected = selectedPlatforms.some(
                       (p) => p.platform === platform.id
@@ -906,7 +906,7 @@ export default function LinksPage() {
                         key={platform.id}
                         onClick={() => handleTogglePlatform(platform.id)}
                         disabled={isDisabled}
-                        className={`flex flex-col items-center gap-1 rounded-lg border p-2 transition-all ${
+                        className={`flex flex-col items-center gap-1 rounded-lg border p-3 transition-all ${
                           isSelected
                             ? "border-blue-500 bg-blue-50"
                             : isDisabled
@@ -939,13 +939,15 @@ export default function LinksPage() {
                   return (
                     <div
                       key={selected.platform}
-                      className="flex items-center gap-2"
+                      className="flex items-center gap-1.5"
                     >
-                      <SocialPlatformIcon
-                        platform={selected.platform}
-                        size="sm"
-                        showBackground
-                      />
+                      <div className="flex-shrink-0">
+                        <SocialPlatformIcon
+                          platform={selected.platform}
+                          size="sm"
+                          showBackground
+                        />
+                      </div>
                       <input
                         type="url"
                         value={selected.url}
@@ -962,18 +964,18 @@ export default function LinksPage() {
                           }
                         }}
                         placeholder={`https://${selected.platform}.com/...`}
-                        className="flex-1 rounded border border-blue-300 bg-white px-2 py-1.5 text-sm"
+                        className="flex-1 min-w-0 rounded border border-blue-300 bg-white px-2 py-1.5 text-xs"
                         disabled={isSavingThis}
                         aria-label={`${selected.platform} URL 입력`}
                       />
                       {isSavingThis ? (
-                        <span className="text-xs text-blue-500">...</span>
+                        <span className="text-xs text-blue-500 flex-shrink-0">...</span>
                       ) : (
                         <button
                           onClick={() =>
                             handleTogglePlatform(selected.platform)
                           }
-                          className="text-xs text-red-500 p-1"
+                          className="text-xs text-red-500 p-1 flex-shrink-0"
                           aria-label={`${selected.platform} 선택 취소`}
                         >
                           X
@@ -989,14 +991,14 @@ export default function LinksPage() {
 
         {/* 링크 관리 카드 - 모바일 */}
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between py-3 px-4">
+          <CardHeader className="flex flex-row items-center justify-between py-2.5 px-3">
             <CardTitle className="text-sm">
               링크 ({links.length}/{MAX_LINKS})
             </CardTitle>
             <button
               onClick={() => setIsModalOpen(true)}
               disabled={links.length >= MAX_LINKS}
-              className={`rounded px-3 py-1.5 text-xs text-white ${
+              className={`rounded px-3 py-1.5 text-xs font-medium text-white ${
                 links.length >= MAX_LINKS
                   ? "bg-gray-300 cursor-not-allowed"
                   : "bg-primary hover:bg-primary/90"
@@ -1006,7 +1008,7 @@ export default function LinksPage() {
               + 추가
             </button>
           </CardHeader>
-          <CardContent className="p-4 pt-0">
+          <CardContent className="p-3 pt-0">
             {links.length === 0 ? (
               <div className="py-6 text-center">
                 <p className="text-gray-600 text-sm">아직 링크가 없습니다</p>
@@ -1026,10 +1028,10 @@ export default function LinksPage() {
 
         {/* 내 페이지 공유 카드 - 모바일 (최하단) */}
         <Card>
-          <CardHeader className="py-3 px-4">
+          <CardHeader className="py-2.5 px-3">
             <CardTitle className="text-sm">내 페이지 공유</CardTitle>
           </CardHeader>
-          <CardContent className="p-4 pt-0 space-y-3">
+          <CardContent className="p-3 pt-0 space-y-3">
             {!isAuthenticated ? (
               // 상태 1: TEST 모드
               <>
@@ -1043,7 +1045,7 @@ export default function LinksPage() {
                 </div>
                 <Button
                   variant="primary"
-                  className="w-full text-sm"
+                  className="w-full text-sm py-2.5 font-medium"
                   onClick={handleGetShareLink}
                 >
                   🔗 주소 받기
@@ -1063,19 +1065,23 @@ export default function LinksPage() {
                 <div className="flex gap-2">
                   <Button
                     variant="primary"
-                    className="flex-1"
+                    className="flex-1 text-sm py-2.5 font-medium"
                     onClick={handleCopyLink}
                   >
                     {isCopied ? "✓ 복사됨" : "복사"}
                   </Button>
                   <Button
                     variant="secondary"
-                    className="flex-1"
+                    className="flex-1 text-sm py-2.5 font-medium"
                     onClick={handleOpenMyPage}
                   >
                     새 탭에서 열기
                   </Button>
-                  <Button variant="tertiary" onClick={handleGetShareLink}>
+                  <Button
+                    variant="tertiary"
+                    className="text-sm py-2.5"
+                    onClick={handleGetShareLink}
+                  >
                     새로고침
                   </Button>
                 </div>
@@ -1104,7 +1110,7 @@ export default function LinksPage() {
         {/* 플로팅 미리보기 버튼 */}
         <button
           onClick={() => setIsPreviewModalOpen(true)}
-          className="fixed bottom-24 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 rounded-full bg-primary px-4 py-3 text-white shadow-lg hover:bg-primary/90 active:scale-95 transition-all"
+          className="fixed bottom-20 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 rounded-full bg-primary px-5 py-3 text-white shadow-lg hover:bg-primary/90 active:scale-95 transition-all"
           aria-label="페이지 미리보기"
         >
           <svg

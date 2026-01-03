@@ -43,7 +43,7 @@ export function Modal({ isOpen, onClose, children, title, className }: ModalProp
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
@@ -53,7 +53,7 @@ export function Modal({ isOpen, onClose, children, title, className }: ModalProp
       {/* Modal */}
       <div
         className={cn(
-          "relative z-10 w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl",
+          "relative z-10 w-full max-w-md rounded-2xl bg-white p-4 sm:p-6 shadow-2xl",
           className
         )}
       >

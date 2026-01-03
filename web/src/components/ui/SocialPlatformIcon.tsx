@@ -12,10 +12,8 @@ export const SOCIAL_PLATFORMS = [
   { id: "discord", name: "Discord", color: "#5865F2" },
   { id: "twitch", name: "Twitch", color: "#9146FF" },
   { id: "spotify", name: "Spotify", color: "#1DB954" },
-  { id: "soundcloud", name: "SoundCloud", color: "#FF5500" },
   { id: "github", name: "GitHub", color: "#181717" },
   { id: "linkedin", name: "LinkedIn", color: "#0A66C2" },
-  { id: "naverblog", name: "Naver Blog", color: "#03C75A" },
   { id: "email", name: "Email", color: "#EA4335" },
 ] as const;
 
@@ -147,10 +145,8 @@ const iconComponents: Record<string, React.FC> = {
   discord: DiscordIcon,
   twitch: TwitchIcon,
   spotify: SpotifyIcon,
-  soundcloud: SoundCloudIcon,
   github: GitHubIcon,
   linkedin: LinkedInIcon,
-  naverblog: NaverBlogIcon,
   email: EmailIcon,
 };
 
@@ -165,10 +161,8 @@ const platformColors: Record<string, string> = {
   discord: "#5865F2",
   twitch: "#9146FF",
   spotify: "#1DB954",
-  soundcloud: "#FF5500",
   github: "#181717",
   linkedin: "#0A66C2",
-  naverblog: "#03C75A",
   email: "#EA4335",
 };
 
