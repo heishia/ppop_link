@@ -38,7 +38,7 @@ export const startAutoRefresh = () => {
         { withCredentials: true }
       );
       console.log("✅ Token refreshed successfully");
-    } catch (error) {
+    } catch {
       console.log("⚠️ Background refresh failed (user may be logged out)");
       stopAutoRefresh();
     }
