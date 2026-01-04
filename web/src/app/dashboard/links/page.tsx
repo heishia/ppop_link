@@ -1064,25 +1064,18 @@ export default function LinksPage() {
                 />
                 <div className="flex gap-2">
                   <Button
+                    variant="secondary"
+                    className="flex-[2] text-sm py-2.5 font-medium"
+                    disabled
+                  >
+                    ✅ 주소 발급됨
+                  </Button>
+                  <Button
                     variant="primary"
-                    className="flex-1 text-sm py-2.5 font-medium"
+                    className="flex-[3] text-sm py-2.5 font-medium"
                     onClick={handleCopyLink}
                   >
-                    {isCopied ? "✓ 복사됨" : "복사"}
-                  </Button>
-                  <Button
-                    variant="secondary"
-                    className="flex-1 text-sm py-2.5 font-medium"
-                    onClick={handleOpenMyPage}
-                  >
-                    새 탭에서 열기
-                  </Button>
-                  <Button
-                    variant="tertiary"
-                    className="text-sm py-2.5"
-                    onClick={handleGetShareLink}
-                  >
-                    새로고침
+                    {isCopied ? "✓ 복사됨" : "📋 복사"}
                   </Button>
                 </div>
               </>
@@ -1096,11 +1089,11 @@ export default function LinksPage() {
                   className="text-sm text-gray-400 bg-gray-50"
                 />
                 <Button
-                  variant="secondary"
-                  className="w-full text-sm"
-                  disabled
+                  variant="primary"
+                  className="w-full text-sm py-2.5 font-medium"
+                  onClick={handleGetShareLink}
                 >
-                  ✅ 주소 발급됨
+                  🔗 주소 받기
                 </Button>
               </>
             )}
@@ -1731,25 +1724,18 @@ export default function LinksPage() {
                 />
                 <div className="flex gap-2">
                   <Button
+                    variant="secondary"
+                    className="flex-[2] text-xs py-2"
+                    disabled
+                  >
+                    ✅ 발급됨
+                  </Button>
+                  <Button
                     variant="primary"
-                    className="flex-1 text-xs"
+                    className="flex-[3] text-xs py-2"
                     onClick={handleCopyLink}
                   >
-                    {isCopied ? "✓ 복사됨" : "복사"}
-                  </Button>
-                  <Button
-                    variant="secondary"
-                    className="flex-1 text-xs"
-                    onClick={handleOpenMyPage}
-                  >
-                    새 탭에서 열기
-                  </Button>
-                  <Button
-                    variant="tertiary"
-                    className="text-xs"
-                    onClick={handleGetShareLink}
-                  >
-                    새로고침
+                    {isCopied ? "✓ 복사됨" : "📋 복사"}
                   </Button>
                 </div>
               </div>
@@ -1763,11 +1749,11 @@ export default function LinksPage() {
                   className="text-sm text-gray-400 bg-gray-50"
                 />
                 <Button
-                  variant="secondary"
-                  className="w-full text-sm"
-                  disabled
+                  variant="primary"
+                  className="w-full text-sm py-2"
+                  onClick={handleGetShareLink}
                 >
-                  ✅ 주소 발급됨
+                  🔗 주소 받기
                 </Button>
               </div>
             )}
