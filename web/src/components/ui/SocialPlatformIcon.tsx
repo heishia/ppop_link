@@ -105,24 +105,21 @@ const LinkedInIcon = () => (
 const _NaverBlogIcon = () => (
   <svg viewBox="0 0 24 24" fill="none">
     {/* 흰색 말풍선 (둥근 사각형 + 아래 삼각형 꼬리) */}
-    <path 
-      d="M4 3C2.9 3 2 3.9 2 5V15C2 16.1 2.9 17 4 17H8L12 21L16 17H20C21.1 17 22 16.1 22 15V5C22 3.9 21.1 3 20 3H4Z" 
+    <path
+      d="M4 3C2.9 3 2 3.9 2 5V15C2 16.1 2.9 17 4 17H8L12 21L16 17H20C21.1 17 22 16.1 22 15V5C22 3.9 21.1 3 20 3H4Z"
       fill="white"
       stroke="white"
       strokeWidth="0.5"
     />
     {/* B 글자 */}
-    <path 
+    <path
       d="M7 7H9.5C10.33 7 11 7.67 11 8.5C11 9 10.75 9.42 10.38 9.68C10.88 9.93 11.25 10.45 11.25 11.08C11.25 12.03 10.47 12.75 9.58 12.75H7V7ZM8.25 9.25H9.42C9.69 9.25 9.92 9.03 9.92 8.75C9.92 8.47 9.69 8.25 9.42 8.25H8.25V9.25ZM8.25 11.5H9.5C9.78 11.5 10 11.28 10 11C10 10.72 9.78 10.5 9.5 10.5H8.25V11.5Z"
       fill="#FF6600"
     />
     {/* L 글자 */}
-    <path 
-      d="M12 7H13.25V11.5H15V12.75H12V7Z"
-      fill="#FF6600"
-    />
+    <path d="M12 7H13.25V11.5H15V12.75H12V7Z" fill="#FF6600" />
     {/* O 글자 */}
-    <path 
+    <path
       d="M17.5 9.875C17.5 8.29 16.46 7 15.125 7H15V8.25H15.125C15.78 8.25 16.25 8.97 16.25 9.875C16.25 10.78 15.78 11.5 15.125 11.5H15V12.75H15.125C16.46 12.75 17.5 11.46 17.5 9.875Z"
       fill="#FF6600"
     />
@@ -226,7 +223,11 @@ export function SocialPlatformIcon({
 
   return (
     <div
-      className={cn(sizeClasses[size], "transition-transform hover:scale-110", className)}
+      className={cn(
+        sizeClasses[size],
+        "transition-transform hover:scale-110",
+        className
+      )}
       style={{ color }}
     >
       <IconComponent />
@@ -239,4 +240,3 @@ export function getPlatformColor(platform: string): string {
   const normalizedPlatform = platform.toLowerCase().replace(/\s/g, "");
   return platformColors[normalizedPlatform] || "#666666";
 }
-
