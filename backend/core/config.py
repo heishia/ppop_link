@@ -85,16 +85,16 @@ class Settings(BaseSettings):
 
     @property
     def cookie_secure(self) -> bool:
-        """쿠키 Secure 플래그 (프로덕션에서만 True)"""
+        """쿠키 Secure 플래그 (HTTPS 사용 시 True)"""
+        # Railway는 HTTPS를 제공하므로 프로덕션에서 True
         return self.is_production
 
     @property
     def cookie_samesite(self) -> str:
         """쿠키 SameSite 설정"""
-        # 프로덕션: 크로스 도메인을 위해 "none" 사용
+        # Railway: 프론트엔드와 백엔드가 같은 도메인이면 "lax" 사용
         # 개발: "lax" 사용 (localhost끼리는 같은 사이트)
-        if self.is_production:
-            return "none"
+        # 크로스 도메인 필요 시 환경변수로 "none" 설정 가능
         return "lax"
 
     @property

@@ -10,6 +10,55 @@ export const apiClient = axios.create({
   },
 });
 
+// 🔑 토큰 자동 갱신 타이머 (YouTube 스타일)
+let tokenRefreshInterval: NodeJS.Timeout | null = null;
+
+/**
+ * 백그라운드에서 토큰 자동 갱신 시작
+ * 10분마다 자동으로 토큰을 갱신하여 사용자가 끊김 없이 서비스 이용 가능
+ */
+export const startAutoRefresh = () => {
+  // 기존 타이머가 있으면 정리
+  if (tokenRefreshInterval) {
+    clearInterval(tokenRefreshInterval);
+  }
+
+  // 10분마다 토큰 갱신 (액세스 토큰 만료 전에 미리 갱신)
+  tokenRefreshInterval = setInterval(async () => {
+    if (typeof window === "undefined") return;
+
+    // 페이지가 숨겨져 있으면 갱신하지 않음 (배터리 절약)
+    if (document.hidden) return;
+
+    try {
+      console.log("🔄 Background token refresh...");
+      await axios.post(
+        `${API_URL}/api/auth/oauth/refresh`,
+        {},
+        { withCredentials: true }
+      );
+      console.log("✅ Token refreshed successfully");
+    } catch (error) {
+      console.log("⚠️ Background refresh failed (user may be logged out)");
+      stopAutoRefresh();
+    }
+  }, 10 * 60 * 1000); // 10분 (600,000ms)
+
+  console.log("🔄 Auto token refresh started (every 10 minutes)");
+};
+
+/**
+ * 토큰 자동 갱신 중지
+ * 로그아웃 시 호출
+ */
+export const stopAutoRefresh = () => {
+  if (tokenRefreshInterval) {
+    clearInterval(tokenRefreshInterval);
+    tokenRefreshInterval = null;
+    console.log("⏹️ Auto token refresh stopped");
+  }
+};
+
 // Request interceptor: 쿠키는 자동으로 전송되므로 토큰 추가 불필요
 // (필요한 경우 다른 용도로 사용 가능)
 
@@ -78,6 +127,7 @@ apiClient.interceptors.response.use(
 
       try {
         // refresh_token은 쿠키에서 자동 전송됨
+        console.log("🔄 Refreshing token due to 401...");
         await axios.post(
           `${API_URL}/api/auth/oauth/refresh`,
           {},
@@ -85,6 +135,7 @@ apiClient.interceptors.response.use(
         );
 
         // 갱신 성공
+        console.log("✅ Token refresh successful");
         processQueue(null);
         isRefreshing = false;
 
@@ -92,8 +143,12 @@ apiClient.interceptors.response.use(
         return apiClient(originalRequest);
       } catch (refreshError) {
         // 갱신 실패
+        console.error("❌ Token refresh failed:", refreshError);
         processQueue(refreshError as AxiosError);
         isRefreshing = false;
+
+        // 자동 갱신 중지
+        stopAutoRefresh();
 
         // 로그인 페이지로 리다이렉트
         // 단, 이미 로그인 관련 페이지나 공개 페이지에 있으면 리다이렉트하지 않음
@@ -105,8 +160,8 @@ apiClient.interceptors.response.use(
           );
 
           if (!isPublicPage) {
-            console.log("Authentication failed, redirecting to login...");
-            window.location.href = "/login";
+            console.log("🔐 Authentication required, redirecting to login...");
+            window.location.href = "/login?sessionExpired=true";
           }
         }
         return Promise.reject(refreshError);

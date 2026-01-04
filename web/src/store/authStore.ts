@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { authApi, User, OAuthCallbackData, SubscriptionStatus } from "@/lib/api/auth";
+import { startAutoRefresh, stopAutoRefresh } from "@/lib/api/client";
 
 // API 에러를 문자열로 변환하는 헬퍼 함수
 function parseApiError(error: unknown, fallbackMessage: string): string {
@@ -106,6 +107,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         isLoading: false,
       });
 
+      // 🔑 로그인 성공 시 자동 토큰 갱신 시작 (YouTube 스타일)
+      startAutoRefresh();
+
       console.log("OAuth callback completed successfully");
     } catch (error: unknown) {
       // state 정리
@@ -127,6 +131,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   logout: async () => {
     try {
+      // 🔑 로그아웃 시 자동 토큰 갱신 중지
+      stopAutoRefresh();
+      
       await authApi.logout();
     } catch (error) {
       console.error("Logout error:", error);
@@ -158,6 +165,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         isLoading: false,
       });
 
+      // 🔑 사용자 정보 로드 성공 시 자동 토큰 갱신 시작
+      startAutoRefresh();
+
       // 구독 상태도 함께 로드
       await get().loadSubscription();
     } catch {
@@ -168,6 +178,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         isLoading: false,
         subscription: null,
       });
+      
+      // 🔑 로그인되어 있지 않으면 자동 갱신 중지
+      stopAutoRefresh();
     }
   },
 

@@ -96,13 +96,15 @@ async def oauth_callback(request: OAuthCallbackRequest, response: Response):
     user = await auth_service.get_or_create_user_from_token(token_response.access_token)
 
     # HttpOnly 쿠키로 토큰 설정
+    # 액세스 토큰: 1시간 (JWT 자체는 15-30분, 자동 갱신으로 커버)
+    # 리프레시 토큰: 60일 (슬라이딩 윈도우로 활동 시 계속 연장)
     response.set_cookie(
         key="access_token",
         value=token_response.access_token,
         httponly=True,
         secure=settings.cookie_secure,  # 개발: False, 프로덕션: True
         samesite=settings.cookie_samesite,  # "lax"
-        domain=settings.cookie_domain,  # 개발: None, 프로덕션: ".ppoplink.site"
+        domain=settings.cookie_domain,  # None (Railway 호환)
         max_age=3600,  # 1시간
         path="/",
     )
@@ -113,7 +115,7 @@ async def oauth_callback(request: OAuthCallbackRequest, response: Response):
         secure=settings.cookie_secure,
         samesite=settings.cookie_samesite,
         domain=settings.cookie_domain,
-        max_age=2592000,  # 30일
+        max_age=5184000,  # 60일 (60 * 24 * 60 * 60)
         path="/",
     )
 
@@ -140,6 +142,7 @@ async def oauth_refresh(
     user = await auth_service.get_or_create_user_from_token(token_response.access_token)
 
     # 새 토큰을 HttpOnly 쿠키로 설정
+    # 슬라이딩 윈도우: 갱신할 때마다 리프레시 토큰도 60일 연장
     response.set_cookie(
         key="access_token",
         value=token_response.access_token,
@@ -147,7 +150,7 @@ async def oauth_refresh(
         secure=settings.cookie_secure,
         samesite=settings.cookie_samesite,
         domain=settings.cookie_domain,
-        max_age=3600,
+        max_age=3600,  # 1시간
         path="/",
     )
     response.set_cookie(
@@ -157,7 +160,7 @@ async def oauth_refresh(
         secure=settings.cookie_secure,
         samesite=settings.cookie_samesite,
         domain=settings.cookie_domain,
-        max_age=2592000,
+        max_age=5184000,  # 60일 (갱신 시마다 연장)
         path="/",
     )
 
