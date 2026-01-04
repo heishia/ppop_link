@@ -149,7 +149,7 @@ export default function LinksPage() {
       const response = await profileApi.getShareLink();
       const shareUrl = `${window.location.origin}${response.share_url}`;
       setPublicProfileUrl(shareUrl);
-      
+
       // 클립보드에 복사
       await navigator.clipboard.writeText(shareUrl);
       setIsCopied(true);
@@ -181,7 +181,7 @@ export default function LinksPage() {
   };
 
   // 내 페이지 새 탭에서 열기
-  const handleOpenMyPage = () => {
+  const _handleOpenMyPage = () => {
     if (!publicProfileUrl) {
       // 공유 링크가 없으면 발급 시도
       handleGetShareLink();
@@ -192,7 +192,8 @@ export default function LinksPage() {
 
   const { isAuthenticated } = useAuthStore();
   const { loadFromSessionStorage, syncSessionDataToServer } = useProfileStore();
-  const { loadLinksFromSessionStorage, syncLinksDataToServer } = useLinksStore();
+  const { loadLinksFromSessionStorage, syncLinksDataToServer } =
+    useLinksStore();
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -235,7 +236,16 @@ export default function LinksPage() {
       }
       loadLinksFromSessionStorage();
     }
-  }, [isAuthenticated, fetchLinks, fetchSocialLinks, fetchProfile, loadFromSessionStorage, loadLinksFromSessionStorage, syncSessionDataToServer, syncLinksDataToServer]);
+  }, [
+    isAuthenticated,
+    fetchLinks,
+    fetchSocialLinks,
+    fetchProfile,
+    loadFromSessionStorage,
+    loadLinksFromSessionStorage,
+    syncSessionDataToServer,
+    syncLinksDataToServer,
+  ]);
 
   // 마이그레이션 성공 이벤트 리스너
   useEffect(() => {
@@ -636,8 +646,8 @@ export default function LinksPage() {
                 profileSaveMessage.type === "success"
                   ? "bg-green-50 text-green-700 border border-green-200"
                   : profileSaveMessage.type === "error"
-                  ? "bg-red-50 text-red-700 border border-red-200"
-                  : "bg-yellow-50 text-yellow-700 border border-yellow-300"
+                    ? "bg-red-50 text-red-700 border border-red-200"
+                    : "bg-yellow-50 text-yellow-700 border border-yellow-300"
               }`}
             >
               {profileSaveMessage.text}
@@ -913,7 +923,7 @@ export default function LinksPage() {
                               ? "border-gray-100 bg-gray-50 opacity-40"
                               : "border-gray-200 bg-white"
                         }`}
-                        aria-label={`${platform.name} ${isSelected ? '선택 해제' : '선택'}`}
+                        aria-label={`${platform.name} ${isSelected ? "선택 해제" : "선택"}`}
                       >
                         <SocialPlatformIcon
                           platform={platform.id}
@@ -969,7 +979,9 @@ export default function LinksPage() {
                         aria-label={`${selected.platform} URL 입력`}
                       />
                       {isSavingThis ? (
-                        <span className="text-xs text-blue-500 flex-shrink-0">...</span>
+                        <span className="text-xs text-blue-500 flex-shrink-0">
+                          ...
+                        </span>
                       ) : (
                         <button
                           onClick={() =>
@@ -1057,11 +1069,7 @@ export default function LinksPage() {
             ) : publicProfileUrl ? (
               // 상태 2: 로그인 + 주소 발급됨
               <>
-                <Input
-                  value={publicProfileUrl}
-                  readOnly
-                  className="text-sm"
-                />
+                <Input value={publicProfileUrl} readOnly className="text-sm" />
                 <div className="flex gap-2">
                   <Button
                     variant="secondary"
@@ -1263,8 +1271,8 @@ export default function LinksPage() {
                 profileSaveMessage.type === "success"
                   ? "bg-green-50 text-green-700 border border-green-200"
                   : profileSaveMessage.type === "error"
-                  ? "bg-red-50 text-red-700 border border-red-200"
-                  : "bg-yellow-50 text-yellow-700 border border-yellow-300"
+                    ? "bg-red-50 text-red-700 border border-red-200"
+                    : "bg-yellow-50 text-yellow-700 border border-yellow-300"
               }`}
             >
               {profileSaveMessage.text}
@@ -1551,7 +1559,7 @@ export default function LinksPage() {
                                 ? `SNS 아이콘은 최대 ${MAX_SOCIAL_ICONS}개까지 추가할 수 있습니다`
                                 : platform.name
                             }
-                            aria-label={`${platform.name} ${isSelected ? '선택 해제' : '선택'}`}
+                            aria-label={`${platform.name} ${isSelected ? "선택 해제" : "선택"}`}
                           >
                             <SocialPlatformIcon
                               platform={platform.id}
@@ -1717,11 +1725,7 @@ export default function LinksPage() {
             ) : publicProfileUrl ? (
               // 상태 2: 로그인 + 주소 발급됨
               <div className="space-y-2">
-                <Input
-                  value={publicProfileUrl}
-                  readOnly
-                  className="text-sm"
-                />
+                <Input value={publicProfileUrl} readOnly className="text-sm" />
                 <div className="flex gap-2">
                   <Button
                     variant="secondary"
