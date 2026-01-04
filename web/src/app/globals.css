@@ -92,7 +92,7 @@ label {
     transparent 50%,
     rgba(0, 0, 0, 0.1) 100%
   );
-  border-radius: 55px;
+  border-radius: inherit;
   pointer-events: none;
   z-index: 10;
 }

@@ -18,13 +18,13 @@ export default function HelpPage() {
     <div className="min-h-screen bg-white">
       <MainHeader />
       <div className="mx-auto max-w-4xl px-4 py-12 sm:py-20">
-        <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-8">
+        <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-8 text-center sm:text-left">
           도움말
         </h1>
 
         {/* 업데이트 소식 섹션 */}
         <section className="mb-12">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">업데이트 소식</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center sm:text-left">업데이트 소식</h2>
           <div className="bg-gray-50 rounded-lg p-6 mb-6">
             <p className="text-gray-700 mb-4">
               뽑링크의 최신 업데이트 소식과 새로운 기능을 확인하세요.
@@ -51,7 +51,7 @@ export default function HelpPage() {
 
         {/* 사용방법 섹션 */}
         <section>
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">사용방법</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center sm:text-left">사용방법</h2>
           <div className="space-y-6">
             <div className="border border-gray-200 rounded-lg p-6">
               <h3 className="text-xl font-semibold text-gray-900 mb-3">

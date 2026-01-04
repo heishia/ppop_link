@@ -64,7 +64,7 @@ export default function UpdatesPage() {
     <div className="min-h-screen bg-white">
       <MainHeader />
       <div className="mx-auto max-w-4xl px-4 py-12 sm:py-20">
-        <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-8">
+        <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-8 text-center sm:text-left">
           업데이트 소식
         </h1>
 

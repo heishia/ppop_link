@@ -17,13 +17,13 @@ export default function AboutPage() {
     <div className="min-h-screen bg-white">
       <MainHeader />
       <div className="mx-auto max-w-4xl px-4 py-12 sm:py-20">
-        <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-8">
+        <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-8 text-center sm:text-left">
           소개
         </h1>
 
         {/* PPOP 소개 */}
         <section className="mb-12">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">PPOP 소개</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center sm:text-left">PPOP 소개</h2>
           <div className="bg-gray-50 rounded-lg p-6 mb-6">
             <p className="text-gray-700 leading-relaxed mb-4">
               PPOP은 1인 에이전시로, 사용자 중심의 웹 서비스를 개발하고 있습니다.
@@ -38,7 +38,7 @@ export default function AboutPage() {
 
         {/* 개발자 소개 */}
         <section className="mb-12">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">개발자 소개</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center sm:text-left">개발자 소개</h2>
           <div className="border border-gray-200 rounded-lg p-6">
             <h3 className="text-xl font-semibold text-gray-900 mb-4">
               김뽑희
@@ -69,7 +69,7 @@ export default function AboutPage() {
 
         {/* 서비스 철학 */}
         <section>
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">서비스 철학</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center sm:text-left">서비스 철학</h2>
           <div className="grid gap-6 sm:grid-cols-2">
             <div className="border border-gray-200 rounded-lg p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-3">

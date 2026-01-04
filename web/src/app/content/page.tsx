@@ -47,8 +47,8 @@ export default function ContentPage() {
     <div className="min-h-screen bg-white">
       <MainHeader />
       <div className="mx-auto max-w-4xl px-4 py-12 sm:py-20">
-        <div className="flex items-center justify-between mb-4">
-          <h1 className="text-3xl sm:text-4xl font-bold text-gray-900">
+        <div className="flex flex-col sm:flex-row items-center sm:items-center justify-between mb-4">
+          <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4 sm:mb-0 text-center sm:text-left">
             컨텐츠
           </h1>
           {isAdmin && (
@@ -65,7 +65,7 @@ export default function ContentPage() {
             </Button>
           )}
         </div>
-        <p className="text-gray-600 mb-8">
+        <p className="text-gray-600 mb-8 text-center sm:text-left">
           뽑링크 프로그램 소개, 사용 가이드, 팁과 노하우 등 다양한 컨텐츠를 확인하세요.
         </p>
 
