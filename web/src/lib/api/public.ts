@@ -4,10 +4,10 @@ import { Link, SocialLink } from "./links";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8005";
 
-import { ButtonStyle } from "./auth";
+import { ButtonStyle, FontFamily } from "./auth";
 
 export interface PublicProfile {
-  public_link_id: string;               // 암호화된 공개 링크 ID
+  public_link_id: string;
   username: string;
   display_name: string | null;
   bio: string | null;
@@ -15,10 +15,11 @@ export interface PublicProfile {
   background_image_url: string | null;
   background_color: string | null;
   theme: string;
-  button_style: ButtonStyle;            // 링크 버튼 스타일
+  button_style: ButtonStyle;
+  font_family: FontFamily;
   links: Link[];
   social_links: SocialLink[];
-  is_pro_user: boolean;                 // PRO 사용자 여부 (워터마크 제거용)
+  is_pro_user: boolean;
 }
 
 export const publicApi = {

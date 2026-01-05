@@ -1,11 +1,12 @@
 import { apiClient } from "./client";
-import { User, ButtonStyle } from "./auth";
+import { User, ButtonStyle, FontFamily } from "./auth";
 
 export interface ProfileUpdateData {
   display_name?: string;
   bio?: string;
   background_color?: string;
   button_style?: ButtonStyle;
+  font_family?: FontFamily;
 }
 
 export interface ThemeUpdateData {

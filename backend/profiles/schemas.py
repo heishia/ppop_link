@@ -13,6 +13,7 @@ class ProfileUpdateRequest(BaseModel):
     bio: Optional[str] = Field(None, max_length=500)
     background_color: Optional[str] = Field(None, pattern=r"^#[0-9A-Fa-f]{6}$")
     button_style: Optional[Literal["default", "outline", "filled"]] = None
+    font_family: Optional[Literal["default", "Noto Sans KR", "Nanum Gothic", "Gowun Batang"]] = None
 
 
 class ThemeUpdateRequest(BaseModel):

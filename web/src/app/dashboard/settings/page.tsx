@@ -8,6 +8,8 @@ import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
 import { Avatar } from "@/components/ui/Avatar";
 import { DEFAULT_BACKGROUND_COLOR } from "@/lib/constants/colors";
+import { FONT_OPTIONS, getGoogleFontUrl } from "@/lib/constants/fonts";
+import { FontFamily } from "@/lib/api/auth";
 
 // localStorage 키
 const DRAFT_STORAGE_KEY = "profile_draft";
@@ -17,6 +19,7 @@ interface DraftData {
   display_name: string;
   bio: string;
   background_color: string;
+  font_family: FontFamily;
   savedAt: string;
 }
 
@@ -28,14 +31,15 @@ export default function SettingsPage() {
   const [displayName, setDisplayName] = useState("");
   const [bio, setBio] = useState("");
   const [backgroundColor, setBackgroundColor] = useState(DEFAULT_BACKGROUND_COLOR);
+  const [fontFamily, setFontFamily] = useState<FontFamily>("default");
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState<{ type: "success" | "error" | "draft"; text: string } | null>(null);
   
-  // 변경사항 추적을 위한 원본 데이터
   const [originalData, setOriginalData] = useState<{
     display_name: string;
     bio: string;
     background_color: string;
+    font_family: FontFamily;
   } | null>(null);
   
   // dirty state (변경사항 있는지)
@@ -70,28 +74,27 @@ export default function SettingsPage() {
 
     const draft = loadDraft();
     
-    // 프로필 데이터가 로드되면 폼에 반영 (임시저장 우선)
     if (profile) {
       const serverData = {
         display_name: profile.display_name || "",
         bio: profile.bio || "",
         background_color: profile.background_color || DEFAULT_BACKGROUND_COLOR,
+        font_family: (profile.font_family || "default") as FontFamily,
       };
       
-      // 원본 데이터 저장 (서버 데이터 기준)
       setOriginalData(serverData);
       
       if (draft) {
-        // 임시저장 데이터가 있으면 그것을 사용
         setDisplayName(draft.display_name);
         setBio(draft.bio);
         setBackgroundColor(draft.background_color);
+        setFontFamily(draft.font_family || "default");
         
-        // 임시저장 데이터가 서버 데이터와 다르면 dirty로 표시
         const hasChanges = 
           draft.display_name !== serverData.display_name ||
           draft.bio !== serverData.bio ||
-          draft.background_color !== serverData.background_color;
+          draft.background_color !== serverData.background_color ||
+          (draft.font_family || "default") !== serverData.font_family;
         setIsDirty(hasChanges);
         
         if (hasChanges) {
@@ -101,46 +104,45 @@ export default function SettingsPage() {
           });
         }
       } else {
-        // 임시저장 없으면 서버 데이터 사용
         setDisplayName(serverData.display_name);
         setBio(serverData.bio);
         setBackgroundColor(serverData.background_color);
+        setFontFamily(serverData.font_family);
       }
     }
   }, [profile]);
 
-  // 변경사항 감지
   useEffect(() => {
     if (originalData) {
       const hasChanges = 
         displayName !== originalData.display_name ||
         bio !== originalData.bio ||
-        backgroundColor !== originalData.background_color;
+        backgroundColor !== originalData.background_color ||
+        fontFamily !== originalData.font_family;
       setIsDirty(hasChanges);
     }
-  }, [displayName, bio, backgroundColor, originalData]);
+  }, [displayName, bio, backgroundColor, fontFamily, originalData]);
 
-  // 임시저장 함수
   const saveDraft = useCallback(() => {
     try {
       const draft: DraftData = {
         display_name: displayName,
         bio: bio,
         background_color: backgroundColor,
+        font_family: fontFamily,
         savedAt: new Date().toISOString(),
       };
       localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draft));
       setHasDraft(true);
       setSaveMessage({ type: "draft", text: "Draft saved temporarily (Press Save to upload)" });
       
-      // 3초 후 메시지 숨기기
       setTimeout(() => {
         setSaveMessage((prev) => prev?.type === "draft" ? null : prev);
       }, 3000);
     } catch (e) {
       console.error("Failed to save draft:", e);
     }
-  }, [displayName, bio, backgroundColor]);
+  }, [displayName, bio, backgroundColor, fontFamily]);
 
   // 임시저장 삭제
   const clearDraft = useCallback(() => {
@@ -160,7 +162,6 @@ export default function SettingsPage() {
     }
   }, [saveDraft]);
 
-  // 실제 저장 핸들러 (DB 업로드)
   const handleSave = async () => {
     setIsSaving(true);
     setSaveMessage(null);
@@ -170,14 +171,15 @@ export default function SettingsPage() {
         display_name: displayName || undefined,
         bio: bio || undefined,
         background_color: backgroundColor,
+        font_family: fontFamily,
       });
       
-      // 저장 성공 시 임시저장 삭제 및 원본 데이터 업데이트
       clearDraft();
       setOriginalData({
         display_name: displayName,
         bio: bio,
         background_color: backgroundColor,
+        font_family: fontFamily,
       });
       setIsDirty(false);
       
@@ -202,12 +204,12 @@ export default function SettingsPage() {
     }
   };
 
-  // 변경사항 취소 (서버 데이터로 복원)
   const _handleCancel = () => {
     if (originalData) {
       setDisplayName(originalData.display_name);
       setBio(originalData.bio);
       setBackgroundColor(originalData.background_color);
+      setFontFamily(originalData.font_family);
       clearDraft();
       setIsDirty(false);
       setSaveMessage(null);
@@ -384,16 +386,57 @@ export default function SettingsPage() {
           Choose a pastel background color for your profile page
         </p>
 
-        {/* 컬러 팔레트 */}
         <ColorPicker
           selectedColor={backgroundColor}
           onColorSelect={(color) => {
             setBackgroundColor(color);
-            // 색상 변경 시 자동 임시저장
             setTimeout(() => saveDraft(), 100);
           }}
           disabled={isSaving}
         />
+      </section>
+
+      {/* 글꼴 섹션 */}
+      <section className="rounded-xl border border-gray-200 bg-white p-6">
+        <h2 className="mb-2 text-lg font-semibold text-gray-900">Font</h2>
+        <p className="mb-4 text-sm text-gray-600">
+          Choose a font for your profile page
+        </p>
+
+        {FONT_OPTIONS.map((option) => {
+          const googleFontUrl = getGoogleFontUrl(option.value);
+          return (
+            <React.Fragment key={option.value}>
+              {googleFontUrl && (
+                <link href={googleFontUrl} rel="stylesheet" />
+              )}
+            </React.Fragment>
+          );
+        })}
+
+        <div className="grid grid-cols-2 gap-3">
+          {FONT_OPTIONS.map((option) => (
+            <button
+              key={option.value}
+              onClick={() => {
+                setFontFamily(option.value);
+                setTimeout(() => saveDraft(), 100);
+              }}
+              disabled={isSaving}
+              className={`rounded-lg border-2 p-4 text-left transition-all ${
+                fontFamily === option.value
+                  ? "border-primary bg-primary/5"
+                  : "border-gray-200 hover:border-gray-300"
+              }`}
+              style={{
+                fontFamily: option.value === "default" ? "Iseoyun, sans-serif" : `"${option.value}", sans-serif`,
+              }}
+            >
+              <span className="block text-lg font-medium">{option.label}</span>
+              <span className="block text-sm text-gray-500 mt-1">가나다 ABC 123</span>
+            </button>
+          ))}
+        </div>
       </section>
 
       {/* 플로팅 저장 버튼 (오른쪽 하단) */}

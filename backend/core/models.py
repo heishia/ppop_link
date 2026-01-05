@@ -71,6 +71,13 @@ class ButtonStyle(str, Enum):
     FILLED = "filled"        # 검은 배경 + 하얀 텍스트
 
 
+class FontFamily(str, Enum):
+    DEFAULT = "default"
+    NOTO_SANS_KR = "Noto Sans KR"
+    NANUM_GOTHIC = "Nanum Gothic"
+    GOWUN_BATANG = "Gowun Batang"
+
+
 class UserUpdate(BaseModel):
     display_name: Optional[str] = Field(None, max_length=100)
     bio: Optional[str] = Field(None, max_length=500)
@@ -79,21 +86,22 @@ class UserUpdate(BaseModel):
     background_color: Optional[str] = Field(None, pattern=r"^#[0-9A-Fa-f]{6}$")
     theme: Optional[str] = None
     button_style: Optional[ButtonStyle] = None
+    font_family: Optional[FontFamily] = None
 
 
 class User(UserBase, TimestampMixin):
     """DB에 저장되는 기본 사용자 정보 (is_admin 제거 - JWT에서만 관리)"""
     id: UUID
-    user_seq: Optional[int] = None                # 순차 번호 (링크 ID 생성용)
-    public_link_id: Optional[str] = None          # 암호화된 공개 링크 ID
-    phone_number: Optional[str] = None            # 인증된 전화번호 (PPOP Auth에서 검증됨)
+    user_seq: Optional[int] = None
+    public_link_id: Optional[str] = None
+    phone_number: Optional[str] = None
     profile_image_url: Optional[str] = None
     background_image_url: Optional[str] = None
     background_color: Optional[str] = None
     theme: str = "default"
-    button_style: str = "default"                 # 링크 버튼 스타일 (default, outline, filled)
+    button_style: str = "default"
+    font_family: str = "default"
     is_active: bool = True
-    # is_admin 필드 제거 - JWT의 isAdmin을 단일 진실의 원천으로 사용
     
     model_config = ConfigDict(from_attributes=True)
 
@@ -177,7 +185,7 @@ class SocialLink(SocialLinkBase, TimestampMixin):
 
 # Public Profile Response
 class PublicProfile(BaseModel):
-    public_link_id: str                           # 암호화된 공개 링크 ID
+    public_link_id: str
     username: str
     display_name: Optional[str] = None
     bio: Optional[str] = None
@@ -185,10 +193,11 @@ class PublicProfile(BaseModel):
     background_image_url: Optional[str] = None
     background_color: Optional[str] = None
     theme: str = "default"
-    button_style: str = "default"                 # 링크 버튼 스타일
+    button_style: str = "default"
+    font_family: str = "default"
     links: List[Link] = []
     social_links: List[SocialLink] = []
-    is_pro_user: bool = False                     # PRO 사용자 여부 (워터마크 제거용)
+    is_pro_user: bool = False
 
 
 # Auth Models

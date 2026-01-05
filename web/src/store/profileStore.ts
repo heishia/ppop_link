@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { profileApi } from "@/lib/api/profile";
-import { User, ButtonStyle } from "@/lib/api/auth";
+import { User, ButtonStyle, FontFamily } from "@/lib/api/auth";
 import { useAuthStore } from "./authStore";
 import { CACHE_CONFIG } from "@/constants/cache";
 
@@ -61,6 +61,7 @@ interface ProfileState {
     bio?: string;
     background_color?: string;
     button_style?: ButtonStyle;
+    font_family?: FontFamily;
   }) => Promise<void>;
   updateTheme: (theme: string) => Promise<void>;
   uploadProfileImage: (file: File) => Promise<void>;

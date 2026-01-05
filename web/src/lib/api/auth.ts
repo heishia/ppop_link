@@ -1,12 +1,12 @@
 import { apiClient } from "./client";
 
-// 버튼 스타일 타입
 export type ButtonStyle = "default" | "outline" | "filled";
+export type FontFamily = "default" | "Noto Sans KR" | "Nanum Gothic" | "Gowun Batang";
 
 export interface User {
   id: string;
-  user_seq: number | null;              // 순차 번호 (링크 ID 생성용)
-  public_link_id: string | null;        // 암호화된 공개 링크 ID
+  user_seq: number | null;
+  public_link_id: string | null;
   username: string;
   email: string;
   display_name: string | null;
@@ -15,7 +15,8 @@ export interface User {
   background_image_url: string | null;
   background_color: string | null;
   theme: string;
-  button_style: ButtonStyle;            // 링크 버튼 스타일
+  button_style: ButtonStyle;
+  font_family: FontFamily;
   is_active: boolean;
   is_admin: boolean;
   created_at: string;

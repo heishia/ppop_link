@@ -7,6 +7,7 @@ import { PublicProfile } from "@/lib/api/public";
 import { PublicLinkButton } from "./PublicLinkButton";
 import { SocialIcons } from "./SocialIcons";
 import { DEFAULT_BACKGROUND_COLOR } from "@/lib/constants/colors";
+import { getGoogleFontUrl } from "@/lib/constants/fonts";
 
 interface PublicProfileClientProps {
   profile: PublicProfile;
@@ -18,17 +19,24 @@ export function PublicProfileClient({ profile }: PublicProfileClientProps) {
     (link) => link.is_active
   );
 
-  // 사용자가 설정한 배경색 사용 (없으면 기본 화이트)
   const bgColor = profile.background_color || DEFAULT_BACKGROUND_COLOR;
-  
-  // PRO 사용자 여부 확인
   const isProUser = profile.is_pro_user || false;
+  const fontFamily = profile.font_family || "default";
+  const googleFontUrl = getGoogleFontUrl(fontFamily);
+  
+  const fontStyle = fontFamily === "default" 
+    ? { fontFamily: "Iseoyun, sans-serif" }
+    : { fontFamily: `"${fontFamily}", sans-serif` };
 
   return (
-    <main
-      className="min-h-screen py-8 sm:py-12 md:py-16"
-      style={{ backgroundColor: bgColor }}
-    >
+    <>
+      {googleFontUrl && (
+        <link href={googleFontUrl} rel="stylesheet" />
+      )}
+      <main
+        className="min-h-screen py-8 sm:py-12 md:py-16"
+        style={{ backgroundColor: bgColor, ...fontStyle }}
+      >
       <MobileContainer>
         {/* Profile Section */}
         <section className="flex flex-col items-center py-8">
@@ -64,7 +72,6 @@ export function PublicProfileClient({ profile }: PublicProfileClientProps) {
         </section>
       </MobileContainer>
 
-      {/* PPOPLINK 워터마크 푸터 - BASIC 사용자용, PRO 사용자는 숨김 */}
       {!isProUser && (
         <footer className="fixed bottom-0 left-0 right-0 flex justify-center py-3 pointer-events-none">
           <a
@@ -78,5 +85,6 @@ export function PublicProfileClient({ profile }: PublicProfileClientProps) {
         </footer>
       )}
     </main>
+    </>
   );
 }
