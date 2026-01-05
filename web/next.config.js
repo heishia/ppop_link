@@ -36,6 +36,19 @@ const nextConfig = {
       },
     ];
   },
+
+  // Rewrites - 개발 환경에서만 백엔드 프록시
+  async rewrites() {
+    if (process.env.NODE_ENV === 'development') {
+      return [
+        {
+          source: '/api/:path*',
+          destination: 'http://localhost:8005/api/:path*',
+        },
+      ];
+    }
+    return [];
+  },
 }
 
 // Injected content via Sentry wizard below

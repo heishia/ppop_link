@@ -1,25 +1,57 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { authApi } from "@/lib/api/auth";
+import { useAuthStore } from "@/store/authStore";
 
 export default function LoginPage() {
+  const router = useRouter();
+  const { isAuthenticated, checkAuth } = useAuthStore();
   const [error, setError] = useState<string | null>(null);
+  const [isChecking, setIsChecking] = useState(true);
 
   useEffect(() => {
-    const redirect = async () => {
+    const init = async () => {
+      const authenticated = await checkAuth();
+
+      setIsChecking(false);
+      
+      if (authenticated) {
+        router.push("/dashboard/links");
+        return;
+      }
+
       try {
         const response = await authApi.getOAuthLoginURL();
         sessionStorage.setItem("oauth_state", response.state);
+
         window.location.replace(response.login_url);
       } catch (err) {
         console.error("Failed to start login:", err);
         setError("Failed to start login. Please try again.");
       }
     };
-    redirect();
-  }, []);
+    init();
+  }, [checkAuth, router]);
+
+  if (isChecking) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-white px-4 py-12">
+        <div className="w-full max-w-md text-center">
+          <Link href="/" className="text-3xl font-extrabold text-primary">
+            PPOPLINK
+          </Link>
+
+          <div className="mt-8 flex flex-col items-center">
+            <div className="mb-4 h-12 w-12 animate-spin rounded-full border-4 border-gray-200 border-t-primary"></div>
+            <p className="text-gray-600">Checking authentication...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (error) {
     return (

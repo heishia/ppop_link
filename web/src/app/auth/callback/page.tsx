@@ -34,6 +34,7 @@ function AuthCallbackContent() {
         }
 
         const response = await authApi.oauthCallback({ code, state });
+
         setUser(response.user);
 
         sessionStorage.removeItem("oauth_state");
@@ -104,7 +105,7 @@ function LoadingFallback() {
             PPOPLINK
           </Link>
         </div>
-        
+
         <div className="flex flex-col items-center">
           <div className="mb-4 h-12 w-12 animate-spin rounded-full border-4 border-gray-200 border-t-primary"></div>
           <p className="text-gray-600">Loading...</p>
@@ -121,4 +122,3 @@ export default function AuthCallbackPage() {
     </Suspense>
   );
 }
-

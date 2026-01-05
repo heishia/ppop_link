@@ -22,9 +22,10 @@ export const useAuthStore = create<AuthState>((set) => ({
   checkAuth: async () => {
     try {
       const response = await authApi.getMe();
+
       set({ user: response.data, isAuthenticated: true });
       return true;
-    } catch {
+    } catch (error) {
       set({ user: null, isAuthenticated: false });
       return false;
     }
@@ -46,9 +47,10 @@ export const useAuthStore = create<AuthState>((set) => ({
         subscription: null,
       });
 
-      // 랜딩 페이지로 리다이렉트
       if (typeof window !== "undefined") {
-        window.location.href = "/";
+        const ppopAuthClientUrl = process.env.NEXT_PUBLIC_PPOP_AUTH_CLIENT_ORIGIN || 'https://auth-client-production-04b4.up.railway.app';
+        const returnUrl = encodeURIComponent(window.location.origin);
+        window.location.href = `${ppopAuthClientUrl}/logout?returnUrl=${returnUrl}`;
       }
     }
   },

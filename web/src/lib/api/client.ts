@@ -18,8 +18,9 @@ function isPublicPath(): boolean {
 }
 
 let isRefreshing = false;
-let refreshAttempts = 0;
-const MAX_REFRESH_ATTEMPTS = 3;
+let consecutiveFailures = 0;
+const MAX_CONSECUTIVE_FAILURES = 3;
+let lastSuccessTime = Date.now();
 let failedQueue: Array<{
   resolve: (value?: unknown) => void;
   reject: (reason?: unknown) => void;
@@ -45,8 +46,14 @@ apiClient.interceptors.response.use(
     };
 
     if (error.response?.status === 401 && !originalRequest._retry) {
-      if (refreshAttempts >= MAX_REFRESH_ATTEMPTS) {
-        console.error("Max refresh attempts reached, redirecting to login...");
+      const now = Date.now();
+      if (now - lastSuccessTime > 60000) {
+        consecutiveFailures = 0;
+      }
+
+      if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
+        console.error("Max consecutive refresh failures reached, redirecting to login...");
+        consecutiveFailures = 0;
         useAuthStore.getState().clearUser();
         if (!isPublicPath()) {
           window.location.href = "/login";
@@ -64,7 +71,6 @@ apiClient.interceptors.response.use(
 
       originalRequest._retry = true;
       isRefreshing = true;
-      refreshAttempts++;
 
       try {
         const refreshResponse = await axios.post(
@@ -77,15 +83,18 @@ apiClient.interceptors.response.use(
           useAuthStore.getState().setUser(refreshResponse.data.user);
         }
 
-        refreshAttempts = 0;
+        consecutiveFailures = 0;
+        lastSuccessTime = Date.now();
         processQueue(null);
         isRefreshing = false;
+
         return apiClient(originalRequest);
       } catch (refreshError) {
+        consecutiveFailures++;
         processQueue(refreshError as Error);
         isRefreshing = false;
         
-        if (refreshAttempts >= MAX_REFRESH_ATTEMPTS) {
+        if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
           useAuthStore.getState().clearUser();
           if (!isPublicPath()) {
             console.log("🔐 Authentication required, redirecting to login...");

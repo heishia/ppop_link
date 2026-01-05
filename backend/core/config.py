@@ -53,6 +53,9 @@ class Settings(BaseSettings):
     # Developer IPs (로그에서 구분하기 위함)
     DEVELOPER_IPS: str = ""  # 쉼표로 구분 (예: "1.2.3.4,5.6.7.8")
     
+    # Cookie Settings (for cross-origin development)
+    COOKIE_SAMESITE: str = ""  # "lax", "strict", or "none" (none for cross-origin)
+    
     @property
     def cors_origins_list(self) -> List[str]:
         """CORS 허용 오리진 목록"""
@@ -92,9 +95,11 @@ class Settings(BaseSettings):
     @property
     def cookie_samesite(self) -> str:
         """쿠키 SameSite 설정"""
+        # 환경변수로 설정 가능 (크로스 도메인 개발 시 "none" 필요)
+        if self.COOKIE_SAMESITE:
+            return self.COOKIE_SAMESITE.lower()
         # Railway: 프론트엔드와 백엔드가 같은 도메인이면 "lax" 사용
         # 개발: "lax" 사용 (localhost끼리는 같은 사이트)
-        # 크로스 도메인 필요 시 환경변수로 "none" 설정 가능
         return "lax"
 
     @property
