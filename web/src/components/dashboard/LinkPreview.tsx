@@ -64,6 +64,7 @@ export function LinkPreview({ profile, links, socialLinks, buttonStyle, fontFami
         <link href={googleFontUrl} rel="stylesheet" />
       )}
       <div
+        data-preview
         className="relative mx-auto h-[600px] w-[280px] overflow-hidden rounded-[40px] border-[8px] border-gray-800 shadow-xl"
         style={{ backgroundColor: bgColor, ...fontStyle }}
       >
@@ -79,11 +80,11 @@ export function LinkPreview({ profile, links, socialLinks, buttonStyle, fontFami
               alt={profile?.display_name || profile?.username || "User"}
               className="!h-[60px] !w-[60px]"
             />
-            <h2 className="mt-2 text-center text-sm font-bold text-gray-900">
+            <h2 className="mt-2 text-center text-sm font-bold text-gray-900" style={fontStyle}>
               {profile?.display_name || profile?.username || "Display Name"}
             </h2>
             {profile?.bio && (
-              <p className="mt-1 text-center text-xs text-gray-600 line-clamp-2 whitespace-pre-line">
+              <p className="mt-1 text-center text-xs text-gray-600 line-clamp-2 whitespace-pre-line" style={fontStyle}>
                 {profile.bio}
               </p>
             )}
@@ -112,7 +113,7 @@ export function LinkPreview({ profile, links, socialLinks, buttonStyle, fontFami
           {/* 링크 섹션 */}
           <section className="flex flex-col gap-2 py-3">
             {activeLinks.length === 0 ? (
-              <div className="py-4 text-center text-xs text-gray-400">
+              <div className="py-4 text-center text-xs text-gray-400" style={fontStyle}>
                 활성화된 링크가 없습니다
               </div>
             ) : (
@@ -120,6 +121,7 @@ export function LinkPreview({ profile, links, socialLinks, buttonStyle, fontFami
                 <button
                   key={link.id}
                   className={`w-full rounded-lg px-3 py-2 text-xs font-medium shadow-sm transition-all hover:shadow ${BUTTON_STYLE_CLASSES[currentButtonStyle]}`}
+                  style={fontStyle}
                 >
                   {link.title}
                 </button>

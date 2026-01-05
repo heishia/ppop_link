@@ -6,14 +6,13 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 interface PageProps {
-  params: {
+  params: Promise<{
     linkId: string;
-  };
+  }>;
 }
 
 export default async function PublicProfilePage({ params }: PageProps) {
-  // 공개 링크 ID로 프로필 조회
-  const linkId = params.linkId;
+  const { linkId } = await params;
 
   try {
     const { data: profile } = await publicApi.getPublicProfile(linkId);
@@ -31,12 +30,12 @@ export default async function PublicProfilePage({ params }: PageProps) {
     ) {
       notFound();
     }
-    throw error;
+    notFound();
   }
 }
 
 export async function generateMetadata({ params }: PageProps) {
-  const linkId = params.linkId;
+  const { linkId } = await params;
 
   try {
     const { data: profile } = await publicApi.getPublicProfile(linkId);
