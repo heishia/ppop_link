@@ -160,6 +160,8 @@ class ProfileService:
             profile_image_url=data.get("profile_image_url"),
             background_image_url=data.get("background_image_url"),
             background_color=data.get("background_color"),
+            button_style=data.get("button_style", "default"),
+            font_family=data.get("font_family", "default"),
             theme=data.get("theme", "default"),
             is_active=data.get("is_active", True),
             is_admin=data.get("is_admin", False),
