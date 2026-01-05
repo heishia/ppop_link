@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import { MobileContainer } from "@/components/layout/MobileContainer";
 import { Avatar } from "@/components/ui/Avatar";
 import { PublicProfile } from "@/lib/api/public";
@@ -28,15 +28,27 @@ export function PublicProfileClient({ profile }: PublicProfileClientProps) {
     ? { fontFamily: "Iseoyun, sans-serif" }
     : { fontFamily: `"${fontFamily}", sans-serif` };
 
+  useEffect(() => {
+    if (!googleFontUrl) return;
+    
+    const existingLink = document.querySelector(`link[href="${googleFontUrl}"]`);
+    if (existingLink) return;
+    
+    const link = document.createElement("link");
+    link.href = googleFontUrl;
+    link.rel = "stylesheet";
+    document.head.appendChild(link);
+    
+    return () => {
+      document.head.removeChild(link);
+    };
+  }, [googleFontUrl]);
+
   return (
-    <>
-      {googleFontUrl && (
-        <link href={googleFontUrl} rel="stylesheet" />
-      )}
-      <main
-        className="min-h-screen py-8 sm:py-12 md:py-16"
-        style={{ backgroundColor: bgColor, ...fontStyle }}
-      >
+    <main
+      className="min-h-screen py-8 sm:py-12 md:py-16"
+      style={{ backgroundColor: bgColor, ...fontStyle }}
+    >
       <MobileContainer>
         {/* Profile Section */}
         <section className="flex flex-col items-center py-8">
@@ -79,12 +91,12 @@ export function PublicProfileClient({ profile }: PublicProfileClientProps) {
             target="_blank"
             rel="noopener noreferrer"
             className="pointer-events-auto text-2xl sm:text-3xl font-bold text-primary/50 transition-all hover:text-primary hover:scale-105"
+            style={{ fontFamily: "Iseoyun, sans-serif" }}
           >
             PPOPLINK
           </a>
         </footer>
       )}
     </main>
-    </>
   );
 }
