@@ -54,7 +54,8 @@ class AuthService:
             "client_id": settings.PPOP_AUTH_CLIENT_ID,
             "redirect_uri": settings.PPOP_AUTH_REDIRECT_URI,
             "response_type": "code",
-            "state": state
+            "state": state,
+            "prompt": "login"
         }
         query_string = "&".join(f"{k}={v}" for k, v in params.items())
         return f"{client_url}/oauth/authorize?{query_string}"

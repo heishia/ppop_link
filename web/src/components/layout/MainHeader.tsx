@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
@@ -16,16 +16,7 @@ const categoryMenuItems = [
 
 export function MainHeader() {
   const pathname = usePathname();
-  const { isAuthenticated, checkAuth } = useAuthStore();
-  const [isChecking, setIsChecking] = useState(true);
-
-  useEffect(() => {
-    const init = async () => {
-      await checkAuth();
-      setIsChecking(false);
-    };
-    init();
-  }, [checkAuth]);
+  const { isAuthenticated } = useAuthStore();
 
   return (
     <header className="sticky top-0 z-50 w-full bg-white border-b border-gray-100">
@@ -60,9 +51,7 @@ export function MainHeader() {
 
             {/* 버튼 영역 - 오른쪽 */}
             <div className="flex items-center gap-2">
-              {isChecking ? (
-                <div className="h-9 w-16" />
-              ) : isAuthenticated ? (
+              {isAuthenticated ? (
                 <Link href="/dashboard/links">
                   <Button
                     variant="primary"
