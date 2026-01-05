@@ -1,4 +1,5 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from "axios";
+import { useAuthStore } from "@/store/authStore";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8005";
 
@@ -10,89 +11,12 @@ export const apiClient = axios.create({
   },
 });
 
-// 🔑 토큰 자동 갱신 타이머 (YouTube 스타일)
-let tokenRefreshInterval: NodeJS.Timeout | null = null;
-
-/**
- * 백그라운드에서 토큰 자동 갱신 시작
- * 10분마다 자동으로 토큰을 갱신하여 사용자가 끊김 없이 서비스 이용 가능
- */
-export const startAutoRefresh = () => {
-  // 기존 타이머가 있으면 정리
-  if (tokenRefreshInterval) {
-    clearInterval(tokenRefreshInterval);
-  }
-
-  // 10분마다 토큰 갱신 (액세스 토큰 만료 전에 미리 갱신)
-  tokenRefreshInterval = setInterval(async () => {
-    if (typeof window === "undefined") return;
-
-    // 페이지가 숨겨져 있으면 갱신하지 않음 (배터리 절약)
-    if (document.hidden) return;
-
-    try {
-      console.log("🔄 Background token refresh...");
-      await axios.post(
-        `${API_URL}/api/auth/oauth/refresh`,
-        {},
-        { withCredentials: true }
-      );
-      console.log("✅ Token refreshed successfully");
-    } catch {
-      console.log("⚠️ Background refresh failed (user may be logged out)");
-      stopAutoRefresh();
-    }
-  }, 10 * 60 * 1000); // 10분 (600,000ms)
-
-  console.log("🔄 Auto token refresh started (every 10 minutes)");
-};
-
-/**
- * 토큰 자동 갱신 중지
- * 로그아웃 시 호출
- */
-export const stopAutoRefresh = () => {
-  if (tokenRefreshInterval) {
-    clearInterval(tokenRefreshInterval);
-    tokenRefreshInterval = null;
-    console.log("⏹️ Auto token refresh stopped");
-  }
-};
-
-// Request interceptor: 쿠키는 자동으로 전송되므로 토큰 추가 불필요
-// (필요한 경우 다른 용도로 사용 가능)
-
-// 인증 확인 경로 (401 시 리다이렉트하지 않고 조용히 실패)
-const AUTH_CHECK_PATHS = [
-  "/api/auth/oauth/callback",
-  "/api/auth/oauth/login",
-  "/api/auth/oauth/refresh", // 리프레시 엔드포인트도 추가하여 무한 루프 방지
-  "/api/auth/me", // 사용자 정보 조회 (쿠키 없으면 조용히 실패)
-];
-
-// 요청 URL이 인증 확인 경로인지 확인
-const isAuthCheckPath = (url: string | undefined): boolean => {
-  if (!url) return false;
-  return AUTH_CHECK_PATHS.some((path) => url.includes(path));
-};
-
-// 리프레시 진행 중 플래그 (동시 다발적인 리프레시 방지)
-let isRefreshing = false;
-let failedQueue: Array<{
-  resolve: (value?: unknown) => void;
-  reject: (reason?: unknown) => void;
-}> = [];
-
-const processQueue = (error: AxiosError | null) => {
-  failedQueue.forEach((prom) => {
-    if (error) {
-      prom.reject(error);
-    } else {
-      prom.resolve();
-    }
-  });
-  failedQueue = [];
-};
+// 공개 경로 확인 (로그인 페이지로 리다이렉트하지 않음)
+function isPublicPath(): boolean {
+  if (typeof window === "undefined") return false;
+  const path = window.location.pathname;
+  return path === "/" || path.startsWith("/login") || path.startsWith("/auth/");
+}
 
 // Response interceptor to handle token refresh
 apiClient.interceptors.response.use(
@@ -102,69 +26,34 @@ apiClient.interceptors.response.use(
       _retry?: boolean;
     };
 
-    // 인증 확인 경로는 토큰 갱신 로직을 우회 (조용히 실패)
-    if (isAuthCheckPath(originalRequest?.url)) {
-      // 콘솔 에러 메시지 억제 (정상적인 401 응답)
-      if (error.response?.status === 401) {
-        // 401은 비로그인 상태에서 정상이므로 에러 로그 출력하지 않음
-        return Promise.reject(error);
-      }
-      return Promise.reject(error);
-    }
-
+    // 401이고 아직 재시도 안 했으면
     if (error.response?.status === 401 && !originalRequest._retry) {
-      if (isRefreshing) {
-        // 이미 리프레시 중이면 큐에 추가
-        return new Promise((resolve, reject) => {
-          failedQueue.push({ resolve, reject });
-        })
-          .then(() => apiClient(originalRequest))
-          .catch((err) => Promise.reject(err));
-      }
-
       originalRequest._retry = true;
-      isRefreshing = true;
 
       try {
-        // refresh_token은 쿠키에서 자동 전송됨
-        console.log("🔄 Refreshing token due to 401...");
-        await axios.post(
+        // 리프레시 시도
+        const refreshResponse = await axios.post(
           `${API_URL}/api/auth/oauth/refresh`,
           {},
           { withCredentials: true }
         );
 
-        // 갱신 성공
-        console.log("✅ Token refresh successful");
-        processQueue(null);
-        isRefreshing = false;
+        // 사용자 정보 업데이트
+        if (refreshResponse.data?.user) {
+          useAuthStore.getState().setUser(refreshResponse.data.user);
+        }
 
         // 원래 요청 재시도
         return apiClient(originalRequest);
-      } catch (refreshError) {
-        // 갱신 실패
-        console.error("❌ Token refresh failed:", refreshError);
-        processQueue(refreshError as AxiosError);
-        isRefreshing = false;
+      } catch {
+        // 리프레시 실패 = 로그인 필요
+        useAuthStore.getState().clearUser();
 
-        // 자동 갱신 중지
-        stopAutoRefresh();
-
-        // 로그인 페이지로 리다이렉트
-        // 단, 이미 로그인 관련 페이지나 공개 페이지에 있으면 리다이렉트하지 않음
-        if (typeof window !== "undefined") {
-          const currentPath = window.location.pathname;
-          const publicPaths = ["/", "/login", "/register", "/auth/callback"];
-          const isPublicPage = publicPaths.some(
-            (path) => currentPath === path || currentPath.startsWith(path)
-          );
-
-          if (!isPublicPage) {
-            console.log("🔐 Authentication required, redirecting to login...");
-            window.location.href = "/login?sessionExpired=true";
-          }
+        if (!isPublicPath()) {
+          console.log("🔐 Authentication required, redirecting to login...");
+          window.location.href = "/login";
         }
-        return Promise.reject(refreshError);
+        return Promise.reject(error);
       }
     }
 

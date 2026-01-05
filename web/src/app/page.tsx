@@ -9,24 +9,17 @@ import { useAuthStore } from "@/store/authStore";
 import { MainHeader } from "@/components/layout/MainHeader";
 
 export default function Home() {
-  const { isAuthenticated, loadUser } = useAuthStore();
-  const [isLoading, setIsLoading] = useState(true);
+  const { isAuthenticated, checkAuth } = useAuthStore();
+  const [isChecking, setIsChecking] = useState(true);
 
   // 로그인 상태 확인 (마운트 시에만)
   useEffect(() => {
     const init = async () => {
-      try {
-        await loadUser();
-      } catch {
-        // 랜딩 페이지에서는 401 에러를 조용히 무시
-        console.log("Not authenticated, showing landing page");
-      } finally {
-        setIsLoading(false);
-      }
+      await checkAuth();
+      setIsChecking(false);
     };
     init();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // 마운트 시에만 실행
+  }, [checkAuth]);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-gray-50">
@@ -79,7 +72,7 @@ export default function Home() {
 
             {/* CTA 버튼 */}
             <div className="mt-8 xs:mt-10 sm:mt-14 flex flex-row items-center justify-center gap-2 sm:gap-4 flex-wrap">
-              {isLoading ? (
+              {isChecking ? (
                 // 로딩 중에는 버튼 숨김 (깜빡임 방지)
                 <div className="h-10 sm:h-12" />
               ) : isAuthenticated ? (

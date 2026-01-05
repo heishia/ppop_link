@@ -73,7 +73,6 @@ interface LinksState {
   saveLinksToSessionStorage: () => void;
   loadLinksFromSessionStorage: () => void;
   clearLinksSessionStorage: () => void;
-  syncLinksDataToServer: () => Promise<void>;
 }
 
 export const useLinksStore = create<LinksState>((set, get) => ({
@@ -369,66 +368,6 @@ export const useLinksStore = create<LinksState>((set, get) => ({
       sessionStorage.removeItem(SESSION_STORAGE_SOCIAL_LINKS_KEY);
     } catch (error) {
       console.error("Failed to clear links from session storage:", error);
-    }
-  },
-  
-  syncLinksDataToServer: async () => {
-    const { isAuthenticated } = useAuthStore.getState();
-    if (!isAuthenticated) return;
-
-    const tempLinks = get().links.filter((link: Link) => link.id.startsWith("temp_"));
-    const tempSocialLinks = get().socialLinks.filter((link: SocialLink) => link.id.startsWith("temp_"));
-
-    if (tempLinks.length === 0 && tempSocialLinks.length === 0) return;
-
-    try {
-      // 기존 링크 가져오기
-      await get().fetchLinks();
-      await get().fetchSocialLinks();
-
-      const existingLinks = get().links.filter((link: Link) => !link.id.startsWith("temp_"));
-      const existingSocialLinks = get().socialLinks.filter((link: SocialLink) => !link.id.startsWith("temp_"));
-
-      // 중복 체크 (URL 기준)
-      for (const link of tempLinks) {
-        const isDuplicate = existingLinks.some(
-          (existing) => existing.url === link.url
-        );
-        if (!isDuplicate) {
-          await linksApi.createLink({
-            title: link.title,
-            url: link.url,
-          });
-        }
-      }
-
-      // 소셜 링크 중복 체크 (플랫폼 기준)
-      for (const socialLink of tempSocialLinks) {
-        const isDuplicate = existingSocialLinks.some(
-          (existing) => existing.platform === socialLink.platform
-        );
-        if (!isDuplicate) {
-          await linksApi.createSocialLink({
-            platform: socialLink.platform,
-            url: socialLink.url,
-          });
-        }
-      }
-
-      // sessionStorage 삭제
-      get().clearLinksSessionStorage();
-
-      // 최신 데이터 다시 로드
-      await get().fetchLinks();
-      await get().fetchSocialLinks();
-
-      // 성공 이벤트 발생
-      if (typeof window !== "undefined") {
-        window.dispatchEvent(new CustomEvent("migration-success"));
-      }
-    } catch (error) {
-      console.error("Failed to sync links data to server:", error);
-      throw error;
     }
   },
 }));

@@ -1,55 +1,26 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useAuthStore } from "@/store/authStore";
+import { authApi } from "@/lib/api/auth";
 
 export default function LoginPage() {
-  const router = useRouter();
-  const { startOAuthLogin, error, isAuthenticated, loadUser } = useAuthStore();
-  const hasRedirectedRef = useRef(false);
-  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // 이미 리다이렉트를 시도했으면 다시 시도하지 않음
-    if (hasRedirectedRef.current) {
-      return;
-    }
-
-    // 먼저 현재 인증 상태를 확인
-    const checkAuthAndRedirect = async () => {
+    const redirect = async () => {
       try {
-        // 사용자 정보를 다시 로드하여 실제 인증 상태 확인
-        await loadUser();
-        
-        // 로그인되어 있으면 대시보드로 이동
-        if (isAuthenticated) {
-          router.push("/dashboard");
-          return;
-        }
-      } catch {
-        // 로그인되어 있지 않음 - 정상
-      } finally {
-        setIsCheckingAuth(false);
-      }
-
-      // 로그인되어 있지 않으면 PPOP Auth로 리다이렉트
-      hasRedirectedRef.current = true;
-      try {
-        await startOAuthLogin();
+        const response = await authApi.getOAuthLoginURL();
+        sessionStorage.setItem("oauth_state", response.state);
+        window.location.replace(response.login_url);
       } catch (err) {
-        console.error("Failed to redirect to PPOP Auth:", err);
-        // 에러 발생 시 플래그 리셋하여 재시도 허용
-        hasRedirectedRef.current = false;
+        console.error("Failed to start login:", err);
+        setError("Failed to start login. Please try again.");
       }
     };
-
-    checkAuthAndRedirect();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    redirect();
   }, []);
 
-  // 에러가 있으면 에러 화면 표시
   if (error) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-white px-4 py-12">
@@ -73,7 +44,6 @@ export default function LoginPage() {
     );
   }
 
-  // 로딩 화면 (인증 확인 중 또는 PPOP Auth로 리다이렉트 중)
   return (
     <div className="flex min-h-screen items-center justify-center bg-white px-4 py-12">
       <div className="w-full max-w-md text-center">
@@ -83,9 +53,7 @@ export default function LoginPage() {
 
         <div className="mt-8 flex flex-col items-center">
           <div className="mb-4 h-12 w-12 animate-spin rounded-full border-4 border-gray-200 border-t-primary"></div>
-          <p className="text-gray-600">
-            {isCheckingAuth ? "Checking authentication..." : "Redirecting to login..."}
-          </p>
+          <p className="text-gray-600">Redirecting to PPOP Auth...</p>
         </div>
       </div>
     </div>

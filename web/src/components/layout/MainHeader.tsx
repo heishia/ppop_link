@@ -16,17 +16,16 @@ const categoryMenuItems = [
 
 export function MainHeader() {
   const pathname = usePathname();
-  const { isAuthenticated, loadUser } = useAuthStore();
-  const [isLoading, setIsLoading] = useState(true);
+  const { isAuthenticated, checkAuth } = useAuthStore();
+  const [isChecking, setIsChecking] = useState(true);
 
   useEffect(() => {
     const init = async () => {
-      await loadUser();
-      setIsLoading(false);
+      await checkAuth();
+      setIsChecking(false);
     };
     init();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // 마운트 시에만 실행
+  }, [checkAuth]);
 
   return (
     <header className="sticky top-0 z-50 w-full bg-white">
@@ -39,7 +38,7 @@ export function MainHeader() {
 
         {/* 버튼 영역 - 오른쪽 */}
         <div className="flex items-center gap-2">
-          {isLoading ? (
+          {isChecking ? (
             <div className="h-9 w-16" />
           ) : isAuthenticated ? (
             <Link href="/dashboard/links">
@@ -84,7 +83,7 @@ export function MainHeader() {
       </div>
 
       {/* 모바일 메뉴 */}
-      <div className="bg-white md:hidden border-b border-gray-100">
+      <div className="bg-white border-b border-gray-100">
         <nav className="flex items-center justify-around px-4 py-2 gap-1">
           {categoryMenuItems.map((item) => {
             const isActive = pathname === item.href || pathname.startsWith(item.href + "/");

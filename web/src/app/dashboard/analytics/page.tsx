@@ -11,7 +11,8 @@ import { useAuthStore } from "@/store/authStore";
 export default function AnalyticsPage() {
   const router = useRouter();
   const isMobile = useIsMobile();
-  const { isAuthenticated, subscription, isLoading: authLoading, startOAuthLogin } = useAuthStore();
+  const { isAuthenticated, subscription } = useAuthStore();
+  const authLoading = false;
   const [analytics, setAnalytics] = useState<AnalyticsSummary | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -72,9 +73,9 @@ export default function AnalyticsPage() {
             setShowLoginModal(false);
             router.push("/dashboard/links");
           }}
-          onLogin={async () => {
+          onLogin={() => {
             setShowLoginModal(false);
-            await startOAuthLogin();
+            window.location.href = "/login";
           }}
         />
       </>

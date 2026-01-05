@@ -1,71 +1,61 @@
 "use client";
 
-import { useEffect, useState, useRef, Suspense } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { authApi } from "@/lib/api/auth";
 import { useAuthStore } from "@/store/authStore";
+import { syncSessionDataToServer } from "@/lib/utils/syncSessionData";
 import Link from "next/link";
 
 function AuthCallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { handleOAuthCallback, error } = useAuthStore();
-  const [callbackError, setCallbackError] = useState<string | null>(null);
-  const processingRef = useRef(false);
+  const { setUser } = useAuthStore();
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const processCallback = async () => {
-      // 이미 처리 중이면 스킵
-      if (processingRef.current) {
-        console.log("OAuth callback already processing, skipping");
-        return;
-      }
-
-      processingRef.current = true;
-
       try {
         const code = searchParams.get("code");
         const state = searchParams.get("state");
         const errorParam = searchParams.get("error");
-        const errorDescription = searchParams.get("error_description");
 
-        // 디버깅: URL 파라미터 로그
-        console.log("Auth callback params:", { code, state, errorParam, errorDescription });
-        console.log("Current URL:", window.location.href);
-
-        // 에러 파라미터가 있으면 에러 처리
         if (errorParam) {
-          console.error("OAuth error from PPOP Auth:", errorParam, errorDescription);
-          setCallbackError(errorDescription || errorParam);
-          return;
+          throw new Error(searchParams.get("error_description") || errorParam);
         }
 
-        // code와 state가 없으면 에러
         if (!code || !state) {
-          console.error("Missing callback parameters:", { code: !!code, state: !!state });
-          setCallbackError("Invalid callback parameters. Please try logging in again.");
-          return;
+          throw new Error("Missing callback parameters");
         }
 
-        console.log("Processing OAuth callback...");
-        await handleOAuthCallback({ code, state });
-        console.log("OAuth callback successful, redirecting to dashboard...");
-        // 성공 시 대시보드로 이동
+        // State 검증
+        const savedState = sessionStorage.getItem("oauth_state");
+        if (savedState !== state) {
+          throw new Error("Invalid state parameter");
+        }
+
+        // 토큰 교환
+        const response = await authApi.oauthCallback({ code, state });
+        setUser(response.user);
+
+        // 세션 스토리지 정리
+        sessionStorage.removeItem("oauth_state");
+
+        // 세션 데이터 동기화
+        await syncSessionDataToServer();
+
+        // 대시보드로 이동
         router.push("/dashboard/links");
       } catch (err) {
         console.error("OAuth callback error:", err);
-        // 에러는 store에서 처리됨
-        setCallbackError(err instanceof Error ? err.message : "Failed to complete login");
-      } finally {
-        processingRef.current = false;
+        setError(err instanceof Error ? err.message : "Login failed");
       }
     };
 
     processCallback();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [router, searchParams, setUser]);
 
-  // 에러 상태
-  if (callbackError || error) {
+  if (error) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-white px-4 py-12">
         <div className="w-full max-w-md text-center">
@@ -74,14 +64,12 @@ function AuthCallbackContent() {
               PPOPLINK
             </Link>
           </div>
-          
+
           <div className="rounded-lg bg-red-50 p-6">
             <h1 className="mb-2 text-xl font-bold text-red-600">
               Login Failed
             </h1>
-            <p className="mb-4 text-sm text-red-600">
-              {callbackError || error}
-            </p>
+            <p className="mb-4 text-sm text-red-600">{error}</p>
             <Link
               href="/login"
               className="inline-block rounded-lg bg-primary px-6 py-2 text-white hover:bg-primary/90"
@@ -94,7 +82,6 @@ function AuthCallbackContent() {
     );
   }
 
-  // 로딩 상태
   return (
     <div className="flex min-h-screen items-center justify-center bg-white px-4 py-12">
       <div className="w-full max-w-md text-center">
@@ -103,9 +90,8 @@ function AuthCallbackContent() {
             PPOPLINK
           </Link>
         </div>
-        
+
         <div className="flex flex-col items-center">
-          {/* 로딩 스피너 */}
           <div className="mb-4 h-12 w-12 animate-spin rounded-full border-4 border-gray-200 border-t-primary"></div>
           <p className="text-gray-600">Completing login...</p>
         </div>

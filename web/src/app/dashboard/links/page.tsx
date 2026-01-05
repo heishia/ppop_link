@@ -191,32 +191,15 @@ export default function LinksPage() {
   };
 
   const { isAuthenticated } = useAuthStore();
-  const { loadFromSessionStorage, syncSessionDataToServer } = useProfileStore();
-  const { loadLinksFromSessionStorage, syncLinksDataToServer } =
-    useLinksStore();
+  const { loadFromSessionStorage } = useProfileStore();
+  const { loadLinksFromSessionStorage } = useLinksStore();
 
   useEffect(() => {
     if (isAuthenticated) {
-      // 로그인 상태면 세션 데이터 동기화 후 서버에서 데이터 가져오기
-      const syncAndFetch = async () => {
-        try {
-          // 세션 스토리지 데이터를 서버로 동기화
-          console.log("Syncing session data to server...");
-          await syncSessionDataToServer();
-          await syncLinksDataToServer();
-          console.log("Session data sync completed");
-        } catch (error) {
-          console.error("Failed to sync session data:", error);
-          // 동기화 실패해도 계속 진행
-        }
-
-        // 서버에서 최신 데이터 가져오기
-        fetchLinks();
-        fetchSocialLinks();
-        fetchProfile();
-      };
-
-      syncAndFetch();
+      // 로그인 상태면 서버에서 데이터 가져오기
+      fetchLinks();
+      fetchSocialLinks();
+      fetchProfile();
     } else {
       // 비로그인 상태면 세션 스토리지에서 데이터 로드
       const tempProfile = loadFromSessionStorage();
@@ -243,8 +226,6 @@ export default function LinksPage() {
     fetchProfile,
     loadFromSessionStorage,
     loadLinksFromSessionStorage,
-    syncSessionDataToServer,
-    syncLinksDataToServer,
   ]);
 
   // 마이그레이션 성공 이벤트 리스너
@@ -577,10 +558,9 @@ export default function LinksPage() {
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
 
   // 로그인 모달에서 "로그인 하기" 클릭 핸들러
-  const handleLoginFromModal = async () => {
+  const handleLoginFromModal = () => {
     setShowLoginModal(false);
-    const { startOAuthLogin } = useAuthStore.getState();
-    await startOAuthLogin();
+    window.location.href = "/login";
   };
 
   // 미리보기용 소셜 링크 (기존 + 선택 중인 것 합침, 최대 5개까지만)

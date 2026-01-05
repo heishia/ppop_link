@@ -1,34 +1,26 @@
 "use client";
 
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useAuthStore } from "@/store/authStore";
+import { authApi } from "@/lib/api/auth";
 
 export default function RegisterPage() {
-  const router = useRouter();
-  const { startOAuthLogin, error, isAuthenticated } = useAuthStore();
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // 이미 로그인되어 있으면 대시보드로 이동
-    if (isAuthenticated) {
-      router.push("/dashboard");
-      return;
-    }
-
-    // 회원가입도 OAuth를 통해 진행 (PPOP Auth로 리다이렉트)
-    const redirectToAuth = async () => {
+    const redirect = async () => {
       try {
-        await startOAuthLogin();
+        const response = await authApi.getOAuthLoginURL();
+        sessionStorage.setItem("oauth_state", response.state);
+        window.location.replace(response.login_url);
       } catch (err) {
-        console.error("Failed to redirect to PPOP Auth:", err);
+        console.error("Failed to start registration:", err);
+        setError("Failed to start registration. Please try again.");
       }
     };
+    redirect();
+  }, []);
 
-    redirectToAuth();
-  }, [isAuthenticated, router, startOAuthLogin]);
-
-  // 에러가 있으면 에러 화면 표시
   if (error) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-white px-4 py-12">
@@ -36,7 +28,7 @@ export default function RegisterPage() {
           <Link href="/" className="text-3xl font-extrabold text-primary">
             PPOPLINK
           </Link>
-          
+
           <div className="mt-8 rounded-lg bg-red-50 p-6">
             <h1 className="mb-2 text-xl font-bold text-red-600">
               Registration Error
@@ -54,17 +46,16 @@ export default function RegisterPage() {
     );
   }
 
-  // 로딩 화면 (PPOP Auth로 리다이렉트 중)
   return (
     <div className="flex min-h-screen items-center justify-center bg-white px-4 py-12">
       <div className="w-full max-w-md text-center">
         <Link href="/" className="text-3xl font-extrabold text-primary">
           PPOPLINK
         </Link>
-        
+
         <div className="mt-8 flex flex-col items-center">
           <div className="mb-4 h-12 w-12 animate-spin rounded-full border-4 border-gray-200 border-t-primary"></div>
-          <p className="text-gray-600">Redirecting to registration...</p>
+          <p className="text-gray-600">Redirecting to PPOP Auth...</p>
         </div>
       </div>
     </div>

@@ -67,7 +67,6 @@ interface ProfileState {
   saveToSessionStorage: (data: Partial<User>) => void;
   loadFromSessionStorage: () => Partial<User> | null;
   clearSessionStorage: () => void;
-  syncSessionDataToServer: () => Promise<void>;
 }
 
 export const useProfileStore = create<ProfileState>((set, get) => ({
@@ -195,27 +194,6 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
       sessionStorage.removeItem(SESSION_STORAGE_PROFILE_KEY);
     } catch (error) {
       console.error("Failed to clear profile from session storage:", error);
-    }
-  },
-  
-  syncSessionDataToServer: async () => {
-    const tempProfile = get().loadFromSessionStorage();
-    if (!tempProfile) return;
-    
-    try {
-      // 세션 스토리지의 프로필 데이터를 서버로 전송
-      await get().updateProfile({
-        display_name: tempProfile.display_name ?? undefined,
-        bio: tempProfile.bio ?? undefined,
-        background_color: tempProfile.background_color ?? undefined,
-        button_style: tempProfile.button_style as ButtonStyle,
-      });
-      
-      // 동기화 성공 후 세션 스토리지 정리
-      get().clearSessionStorage();
-    } catch (error) {
-      console.error("Failed to sync profile data to server:", error);
-      // 에러가 발생해도 세션 스토리지는 유지 (재시도 가능)
     }
   },
 }));
