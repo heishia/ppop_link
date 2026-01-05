@@ -48,9 +48,11 @@ export const useAuthStore = create<AuthState>((set) => ({
       });
 
       if (typeof window !== "undefined") {
-        const ppopAuthClientUrl = process.env.NEXT_PUBLIC_PPOP_AUTH_CLIENT_ORIGIN || 'https://auth-client-production-04b4.up.railway.app';
-        const returnUrl = encodeURIComponent(window.location.origin);
-        window.location.href = `${ppopAuthClientUrl}/auth/logout?returnUrl=${returnUrl}`;
+        sessionStorage.removeItem("temp_profile");
+        sessionStorage.removeItem("temp_links");
+        sessionStorage.removeItem("temp_social_links");
+        sessionStorage.removeItem("oauth_state");
+        window.location.href = "/";
       }
     }
   },
