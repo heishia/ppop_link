@@ -78,25 +78,27 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
   isLoading: false,
   error: null,
   lastFetched: null,
+  hasFetched: false,
 
-  setProfile: (profile) => set({ profile, lastFetched: Date.now() }),
+  setProfile: (profile) => set({ profile, lastFetched: Date.now(), hasFetched: true }),
 
   fetchProfile: async (force = false) => {
     const { lastFetched } = get();
     const now = Date.now();
     
-    if (!force && lastFetched && now - lastFetched < 5 * 60 * 1000) {
+    if (!force && lastFetched && now - lastFetched < CACHE_CONFIG.PROFILE) {
       return;
     }
 
     set({ isLoading: true, error: null });
     try {
       const response = await profileApi.getProfile();
-      set({ profile: response.data, isLoading: false, lastFetched: now });
+      set({ profile: response.data, isLoading: false, lastFetched: now, hasFetched: true });
     } catch (error: unknown) {
       set({
         error: parseApiError(error, "Failed to fetch profile"),
         isLoading: false,
+        hasFetched: true,
       });
     }
   },

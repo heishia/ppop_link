@@ -56,6 +56,8 @@ export default function LinksPage() {
     socialLinks,
     isLoading,
     error,
+    hasFetchedLinks,
+    hasFetchedSocialLinks,
     fetchLinks,
     fetchSocialLinks,
     createLink,
@@ -68,6 +70,7 @@ export default function LinksPage() {
     profile,
     isLoading: profileLoading,
     error: profileError,
+    hasFetched: profileFetched,
     fetchProfile,
     updateProfile,
     uploadProfileImage,
@@ -196,10 +199,10 @@ export default function LinksPage() {
 
   useEffect(() => {
     if (isAuthenticated) {
-      // 로그인 상태면 서버에서 데이터 가져오기 (없을 때만)
-      if (!profile) fetchProfile();
-      if (links.length === 0) fetchLinks();
-      if (socialLinks.length === 0) fetchSocialLinks();
+      // 로그인 상태면 서버에서 데이터 가져오기 (한 번도 fetch 안 했을 때만)
+      if (!profileFetched) fetchProfile();
+      if (!hasFetchedLinks) fetchLinks();
+      if (!hasFetchedSocialLinks) fetchSocialLinks();
     } else {
       // 비로그인 상태면 세션 스토리지에서 데이터 로드
       const tempProfile = loadFromSessionStorage();
@@ -221,9 +224,9 @@ export default function LinksPage() {
     }
   }, [
     isAuthenticated,
-    profile,
-    links.length,
-    socialLinks.length,
+    profileFetched,
+    hasFetchedLinks,
+    hasFetchedSocialLinks,
     fetchLinks,
     fetchSocialLinks,
     fetchProfile,

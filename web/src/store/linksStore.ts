@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { linksApi, Link, SocialLink } from "@/lib/api/links";
 import { useAuthStore } from "./authStore";
+import { CACHE_CONFIG } from "@/constants/cache";
 
 // 세션 스토리지 키
 const SESSION_STORAGE_LINKS_KEY = "temp_links";
@@ -54,6 +55,8 @@ interface LinksState {
   error: string | null;
   lastFetchedLinks: number | null;
   lastFetchedSocialLinks: number | null;
+  hasFetchedLinks: boolean;
+  hasFetchedSocialLinks: boolean;
 
   // Actions
   setLinks: (links: Link[]) => void;
@@ -90,27 +93,30 @@ export const useLinksStore = create<LinksState>((set, get) => ({
   error: null,
   lastFetchedLinks: null,
   lastFetchedSocialLinks: null,
+  hasFetchedLinks: false,
+  hasFetchedSocialLinks: false,
 
-  setLinks: (links) => set({ links, lastFetchedLinks: Date.now() }),
-  setSocialLinks: (socialLinks) => set({ socialLinks, lastFetchedSocialLinks: Date.now() }),
+  setLinks: (links) => set({ links, lastFetchedLinks: Date.now(), hasFetchedLinks: true }),
+  setSocialLinks: (socialLinks) => set({ socialLinks, lastFetchedSocialLinks: Date.now(), hasFetchedSocialLinks: true }),
 
   fetchLinks: async (force = false) => {
     const { lastFetchedLinks } = get();
     const now = Date.now();
     
-    if (!force && lastFetchedLinks && now - lastFetchedLinks < 5 * 60 * 1000) {
+    if (!force && lastFetchedLinks && now - lastFetchedLinks < CACHE_CONFIG.LINKS) {
       return;
     }
 
     set({ isLoading: true, isLoadingLinks: true, error: null });
     try {
       const response = await linksApi.getLinks();
-      set({ links: response.data, isLoading: false, isLoadingLinks: false, lastFetchedLinks: now });
+      set({ links: response.data, isLoading: false, isLoadingLinks: false, lastFetchedLinks: now, hasFetchedLinks: true });
     } catch (error: unknown) {
       set({
         error: parseApiError(error, "Failed to fetch links"),
         isLoading: false,
         isLoadingLinks: false,
+        hasFetchedLinks: true,
       });
     }
   },
@@ -119,17 +125,17 @@ export const useLinksStore = create<LinksState>((set, get) => ({
     const { lastFetchedSocialLinks } = get();
     const now = Date.now();
     
-    if (!force && lastFetchedSocialLinks && now - lastFetchedSocialLinks < 5 * 60 * 1000) {
+    if (!force && lastFetchedSocialLinks && now - lastFetchedSocialLinks < CACHE_CONFIG.SOCIAL_LINKS) {
       return;
     }
 
     set({ isLoadingSocialLinks: true });
     try {
       const response = await linksApi.getSocialLinks();
-      set({ socialLinks: response.data, isLoadingSocialLinks: false, lastFetchedSocialLinks: now });
+      set({ socialLinks: response.data, isLoadingSocialLinks: false, lastFetchedSocialLinks: now, hasFetchedSocialLinks: true });
     } catch (error: unknown) {
       console.error("Failed to fetch social links:", error);
-      set({ isLoadingSocialLinks: false });
+      set({ isLoadingSocialLinks: false, hasFetchedSocialLinks: true });
     }
   },
 
