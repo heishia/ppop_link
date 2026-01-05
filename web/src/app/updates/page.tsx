@@ -22,7 +22,19 @@ interface UpdateItem {
 
 const updates: UpdateItem[] = [
   {
-    date: "2025-01-15",
+    date: "2026-01-05",
+    version: "1.3.0",
+    title: "컨텐츠 관리 시스템 추가",
+    description: "관리자가 컨텐츠를 직접 작성하고 관리할 수 있는 기능을 추가했습니다.",
+    items: [
+      "컨텐츠 페이지 및 카테고리 시스템 추가",
+      "관리자 컨텐츠 작성 기능",
+      "도움말 및 업데이트 페이지 개선",
+      "모바일 반응형 UI 최적화",
+    ],
+  },
+  {
+    date: "2025-12-28",
     version: "1.2.0",
     title: "헤더 네비게이션 및 SEO 최적화",
     description: "사용자 편의성을 위한 헤더 네비게이션 추가 및 검색 엔진 최적화를 적용했습니다.",
@@ -35,7 +47,7 @@ const updates: UpdateItem[] = [
     ],
   },
   {
-    date: "2025-01-01",
+    date: "2025-12-20",
     version: "1.1.0",
     title: "분석 기능 개선",
     description: "링크 클릭 통계 및 분석 기능을 개선했습니다.",
@@ -46,7 +58,7 @@ const updates: UpdateItem[] = [
     ],
   },
   {
-    date: "2024-12-15",
+    date: "2025-12-10",
     version: "1.0.0",
     title: "뽑링크 정식 출시",
     description: "뽑링크 서비스가 정식으로 출시되었습니다.",

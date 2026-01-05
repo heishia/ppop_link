@@ -41,9 +41,9 @@ export default function HelpPage() {
               <h3 className="text-lg font-semibold text-gray-900 mb-2">
                 최신 업데이트
               </h3>
-              <p className="text-sm text-gray-600 mb-1">2025년 1월</p>
+              <p className="text-sm text-gray-600 mb-1">2026년 1월</p>
               <p className="text-gray-700">
-                새로운 헤더 네비게이션과 SEO 최적화 기능이 추가되었습니다.
+                컨텐츠 관리 시스템이 추가되어 다양한 가이드와 팁을 제공합니다.
               </p>
             </div>
           </div>

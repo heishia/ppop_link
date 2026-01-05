@@ -212,7 +212,7 @@ export default function Home() {
         <footer className="border-t border-gray-200 bg-white px-4 py-8 sm:py-12">
           <div className="mx-auto max-w-6xl text-center">
             <p className="text-xs sm:text-sm text-gray-600">
-              2025 PPOPLINK. All rights reserved.
+              2026 PPOPLINK. All rights reserved.
             </p>
           </div>
         </footer>
