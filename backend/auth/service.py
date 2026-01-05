@@ -201,15 +201,13 @@ class AuthService:
             username = await self._generate_unique_username(f"user_{str(ppop_user_id)[:8]}")
         
         user_data = {
-            "id": str(ppop_user_id),  # PPOP Auth의 user_id를 그대로 사용
+            "id": str(ppop_user_id),
             "username": username,
-            "email": email or f"{ppop_user_id}@ppop.auth",  # 이메일이 없으면 임시 이메일
-            "phone_number": phone_number,  # PPOP Auth에서 인증된 전화번호
-            "password_hash": None,  # PPOP Auth 사용자는 비밀번호 없음
+            "email": email or f"{ppop_user_id}@ppop.auth",
+            "phone_number": phone_number,
             "display_name": username,
             "theme": "default",
             "is_active": True,
-            # is_admin 제거 - JWT에서만 관리
             "created_at": now,
         }
         
