@@ -9,7 +9,7 @@ import { useAuthStore } from "@/store/authStore";
 import { contentApi, Content } from "@/lib/api/content";
 
 export default function ContentPage() {
-  const { user, isAuthenticated, loadUser } = useAuthStore();
+  const { user, isAuthenticated, checkAuth } = useAuthStore();
   const [isLoading, setIsLoading] = useState(true);
   const [contentItems, setContentItems] = useState<Content[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -17,7 +17,7 @@ export default function ContentPage() {
   useEffect(() => {
     const init = async () => {
       try {
-        await loadUser();
+        await checkAuth();
         const contents = await contentApi.getAll();
         setContentItems(contents);
       } catch (err) {
@@ -28,7 +28,7 @@ export default function ContentPage() {
       }
     };
     init();
-  }, [loadUser]);
+  }, [checkAuth]);
 
   // 관리자 권한 확인
   const isAdmin = isAuthenticated && user?.is_admin === true;

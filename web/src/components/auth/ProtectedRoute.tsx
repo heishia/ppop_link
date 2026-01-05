@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
 
@@ -10,11 +10,16 @@ interface ProtectedRouteProps {
 
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
   const router = useRouter();
-  const { isAuthenticated, isLoading, loadUser } = useAuthStore();
+  const { isAuthenticated, checkAuth } = useAuthStore();
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    loadUser();
-  }, [loadUser]);
+    const init = async () => {
+      await checkAuth();
+      setIsLoading(false);
+    };
+    init();
+  }, [checkAuth]);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
