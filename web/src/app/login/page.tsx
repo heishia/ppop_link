@@ -1,14 +1,15 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuthStore } from "@/store/authStore";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { startOAuthLogin, error, isAuthenticated } = useAuthStore();
+  const { startOAuthLogin, error, isAuthenticated, loadUser } = useAuthStore();
   const hasRedirectedRef = useRef(false);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
 
   useEffect(() => {
     // 이미 리다이렉트를 시도했으면 다시 시도하지 않음
@@ -16,14 +17,24 @@ export default function LoginPage() {
       return;
     }
 
-    // 이미 로그인되어 있으면 대시보드로 이동
-    if (isAuthenticated) {
-      router.push("/dashboard");
-      return;
-    }
+    // 먼저 현재 인증 상태를 확인
+    const checkAuthAndRedirect = async () => {
+      try {
+        // 사용자 정보를 다시 로드하여 실제 인증 상태 확인
+        await loadUser();
+        
+        // 로그인되어 있으면 대시보드로 이동
+        if (isAuthenticated) {
+          router.push("/dashboard");
+          return;
+        }
+      } catch {
+        // 로그인되어 있지 않음 - 정상
+      } finally {
+        setIsCheckingAuth(false);
+      }
 
-    // 로그인되어 있지 않으면 바로 PPOP Auth로 리다이렉트
-    const redirectToAuth = async () => {
+      // 로그인되어 있지 않으면 PPOP Auth로 리다이렉트
       hasRedirectedRef.current = true;
       try {
         await startOAuthLogin();
@@ -34,9 +45,9 @@ export default function LoginPage() {
       }
     };
 
-    redirectToAuth();
+    checkAuthAndRedirect();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthenticated, router]);
+  }, []);
 
   // 에러가 있으면 에러 화면 표시
   if (error) {
@@ -62,7 +73,7 @@ export default function LoginPage() {
     );
   }
 
-  // 로딩 화면 (PPOP Auth로 리다이렉트 중)
+  // 로딩 화면 (인증 확인 중 또는 PPOP Auth로 리다이렉트 중)
   return (
     <div className="flex min-h-screen items-center justify-center bg-white px-4 py-12">
       <div className="w-full max-w-md text-center">
@@ -72,7 +83,9 @@ export default function LoginPage() {
 
         <div className="mt-8 flex flex-col items-center">
           <div className="mb-4 h-12 w-12 animate-spin rounded-full border-4 border-gray-200 border-t-primary"></div>
-          <p className="text-gray-600">Redirecting to login...</p>
+          <p className="text-gray-600">
+            {isCheckingAuth ? "Checking authentication..." : "Redirecting to login..."}
+          </p>
         </div>
       </div>
     </div>
