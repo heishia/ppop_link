@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { profileApi } from "@/lib/api/profile";
 import { User, ButtonStyle } from "@/lib/api/auth";
 import { useAuthStore } from "./authStore";
+import { CACHE_CONFIG } from "@/constants/cache";
 
 // 세션 스토리지 키
 const SESSION_STORAGE_PROFILE_KEY = "temp_profile";
@@ -49,9 +50,12 @@ interface ProfileState {
   profile: User | null;
   isLoading: boolean;
   error: string | null;
+  lastFetched: number | null;
+  hasFetched: boolean;
 
   // Actions
-  fetchProfile: () => Promise<void>;
+  setProfile: (profile: User) => void;
+  fetchProfile: (force?: boolean) => Promise<void>;
   updateProfile: (data: {
     display_name?: string;
     bio?: string;
@@ -73,12 +77,22 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
   profile: null,
   isLoading: false,
   error: null,
+  lastFetched: null,
 
-  fetchProfile: async () => {
+  setProfile: (profile) => set({ profile, lastFetched: Date.now() }),
+
+  fetchProfile: async (force = false) => {
+    const { lastFetched } = get();
+    const now = Date.now();
+    
+    if (!force && lastFetched && now - lastFetched < 5 * 60 * 1000) {
+      return;
+    }
+
     set({ isLoading: true, error: null });
     try {
       const response = await profileApi.getProfile();
-      set({ profile: response.data, isLoading: false });
+      set({ profile: response.data, isLoading: false, lastFetched: now });
     } catch (error: unknown) {
       set({
         error: parseApiError(error, "Failed to fetch profile"),

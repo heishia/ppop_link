@@ -4,6 +4,8 @@ import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { authApi } from "@/lib/api/auth";
 import { useAuthStore } from "@/store/authStore";
+import { useProfileStore } from "@/store/profileStore";
+import { useLinksStore } from "@/store/linksStore";
 import { syncSessionDataToServer } from "@/lib/utils/syncSessionData";
 import Link from "next/link";
 
@@ -43,6 +45,15 @@ function AuthCallbackContent() {
 
         // 세션 데이터 동기화
         await syncSessionDataToServer();
+
+        // 대시보드 데이터 프리로드
+        await Promise.all([
+          useProfileStore.getState().fetchProfile(),
+          useLinksStore.getState().fetchLinks(),
+          useLinksStore.getState().fetchSocialLinks(),
+        ]).catch((err) => {
+          console.warn("Failed to preload dashboard data:", err);
+        });
 
         // 대시보드로 이동
         router.push("/dashboard/links");

@@ -49,11 +49,17 @@ interface LinksState {
   links: Link[];
   socialLinks: SocialLink[];
   isLoading: boolean;
+  isLoadingLinks: boolean;
+  isLoadingSocialLinks: boolean;
   error: string | null;
+  lastFetchedLinks: number | null;
+  lastFetchedSocialLinks: number | null;
 
   // Actions
-  fetchLinks: () => Promise<void>;
-  fetchSocialLinks: () => Promise<void>;
+  setLinks: (links: Link[]) => void;
+  setSocialLinks: (socialLinks: SocialLink[]) => void;
+  fetchLinks: (force?: boolean) => Promise<void>;
+  fetchSocialLinks: (force?: boolean) => Promise<void>;
   createLink: (data: { title: string; url: string }) => Promise<void>;
   updateLink: (
     linkId: string,
@@ -79,27 +85,51 @@ export const useLinksStore = create<LinksState>((set, get) => ({
   links: [],
   socialLinks: [],
   isLoading: false,
+  isLoadingLinks: false,
+  isLoadingSocialLinks: false,
   error: null,
+  lastFetchedLinks: null,
+  lastFetchedSocialLinks: null,
 
-  fetchLinks: async () => {
-    set({ isLoading: true, error: null });
+  setLinks: (links) => set({ links, lastFetchedLinks: Date.now() }),
+  setSocialLinks: (socialLinks) => set({ socialLinks, lastFetchedSocialLinks: Date.now() }),
+
+  fetchLinks: async (force = false) => {
+    const { lastFetchedLinks } = get();
+    const now = Date.now();
+    
+    if (!force && lastFetchedLinks && now - lastFetchedLinks < 5 * 60 * 1000) {
+      return;
+    }
+
+    set({ isLoading: true, isLoadingLinks: true, error: null });
     try {
       const response = await linksApi.getLinks();
-      set({ links: response.data, isLoading: false });
+      set({ links: response.data, isLoading: false, isLoadingLinks: false, lastFetchedLinks: now });
     } catch (error: unknown) {
       set({
         error: parseApiError(error, "Failed to fetch links"),
         isLoading: false,
+        isLoadingLinks: false,
       });
     }
   },
 
-  fetchSocialLinks: async () => {
+  fetchSocialLinks: async (force = false) => {
+    const { lastFetchedSocialLinks } = get();
+    const now = Date.now();
+    
+    if (!force && lastFetchedSocialLinks && now - lastFetchedSocialLinks < 5 * 60 * 1000) {
+      return;
+    }
+
+    set({ isLoadingSocialLinks: true });
     try {
       const response = await linksApi.getSocialLinks();
-      set({ socialLinks: response.data });
+      set({ socialLinks: response.data, isLoadingSocialLinks: false, lastFetchedSocialLinks: now });
     } catch (error: unknown) {
       console.error("Failed to fetch social links:", error);
+      set({ isLoadingSocialLinks: false });
     }
   },
 

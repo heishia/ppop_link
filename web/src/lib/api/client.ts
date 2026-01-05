@@ -5,20 +5,38 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8005";
 
 export const apiClient = axios.create({
   baseURL: API_URL,
-  withCredentials: true, // 쿠키 자동 전송 활성화
+  withCredentials: true,
   headers: {
     "Content-Type": "application/json",
   },
 });
 
-// 공개 경로 확인 (로그인 페이지로 리다이렉트하지 않음)
 function isPublicPath(): boolean {
   if (typeof window === "undefined") return false;
   const path = window.location.pathname;
   return path === "/" || path.startsWith("/login") || path.startsWith("/auth/");
 }
 
-// Response interceptor to handle token refresh
+let isRefreshing = false;
+let refreshAttempts = 0;
+const MAX_REFRESH_ATTEMPTS = 3;
+let failedQueue: Array<{
+  resolve: (value?: unknown) => void;
+  reject: (reason?: unknown) => void;
+}> = [];
+
+const processQueue = (error: Error | null = null) => {
+  failedQueue.forEach((prom) => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve();
+    }
+  });
+
+  failedQueue = [];
+};
+
 apiClient.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
@@ -26,32 +44,53 @@ apiClient.interceptors.response.use(
       _retry?: boolean;
     };
 
-    // 401이고 아직 재시도 안 했으면
     if (error.response?.status === 401 && !originalRequest._retry) {
+      if (refreshAttempts >= MAX_REFRESH_ATTEMPTS) {
+        console.error("Max refresh attempts reached, redirecting to login...");
+        useAuthStore.getState().clearUser();
+        if (!isPublicPath()) {
+          window.location.href = "/login";
+        }
+        return Promise.reject(error);
+      }
+
+      if (isRefreshing) {
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        })
+          .then(() => apiClient(originalRequest))
+          .catch((err) => Promise.reject(err));
+      }
+
       originalRequest._retry = true;
+      isRefreshing = true;
+      refreshAttempts++;
 
       try {
-        // 리프레시 시도
         const refreshResponse = await axios.post(
           `${API_URL}/api/auth/oauth/refresh`,
           {},
           { withCredentials: true }
         );
 
-        // 사용자 정보 업데이트
         if (refreshResponse.data?.user) {
           useAuthStore.getState().setUser(refreshResponse.data.user);
         }
 
-        // 원래 요청 재시도
+        refreshAttempts = 0;
+        processQueue(null);
+        isRefreshing = false;
         return apiClient(originalRequest);
-      } catch {
-        // 리프레시 실패 = 로그인 필요
-        useAuthStore.getState().clearUser();
-
-        if (!isPublicPath()) {
-          console.log("🔐 Authentication required, redirecting to login...");
-          window.location.href = "/login";
+      } catch (refreshError) {
+        processQueue(refreshError as Error);
+        isRefreshing = false;
+        
+        if (refreshAttempts >= MAX_REFRESH_ATTEMPTS) {
+          useAuthStore.getState().clearUser();
+          if (!isPublicPath()) {
+            console.log("🔐 Authentication required, redirecting to login...");
+            window.location.href = "/login";
+          }
         }
         return Promise.reject(error);
       }
