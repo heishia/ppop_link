@@ -2,6 +2,9 @@ import { notFound } from "next/navigation";
 import { publicApi } from "@/lib/api/public";
 import { PublicProfileClient } from "@/components/public/PublicProfileClient";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 interface PageProps {
   params: {
     linkId: string;

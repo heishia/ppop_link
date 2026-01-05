@@ -62,6 +62,8 @@ class PublicService:
             background_image_url=user_data.get("background_image_url"),
             background_color=user_data.get("background_color"),
             theme=user_data.get("theme", "default"),
+            button_style=user_data.get("button_style", "default"),
+            font_family=user_data.get("font_family", "default"),
             links=links,
             social_links=social_links,
             is_pro_user=is_pro_user
