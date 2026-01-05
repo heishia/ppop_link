@@ -50,7 +50,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       if (typeof window !== "undefined") {
         const ppopAuthClientUrl = process.env.NEXT_PUBLIC_PPOP_AUTH_CLIENT_ORIGIN || 'https://auth-client-production-04b4.up.railway.app';
         const returnUrl = encodeURIComponent(window.location.origin);
-        window.location.href = `${ppopAuthClientUrl}/logout?returnUrl=${returnUrl}`;
+        window.location.href = `${ppopAuthClientUrl}/auth/logout?returnUrl=${returnUrl}`;
       }
     }
   },
