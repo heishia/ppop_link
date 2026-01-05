@@ -5,8 +5,9 @@ import { useRouter } from "next/navigation";
 import { Avatar } from "@/components/ui/Avatar";
 import { SocialPlatformIcon } from "@/components/ui/SocialPlatformIcon";
 import { Link, SocialLink } from "@/lib/api/links";
-import { User, ButtonStyle } from "@/lib/api/auth";
+import { User, ButtonStyle, FontFamily } from "@/lib/api/auth";
 import { DEFAULT_BACKGROUND_COLOR } from "@/lib/constants/colors";
+import { getGoogleFontUrl } from "@/lib/constants/fonts";
 import { X } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 
@@ -28,28 +29,29 @@ interface LinkPreviewProps {
   links: Link[];
   socialLinks: SocialLink[];
   buttonStyle?: ButtonStyle;
+  fontFamily?: FontFamily;
   onShareLinkClick?: () => void;
 }
 
 // 미리보기 전용 컴포넌트 - 대시보드에서 실제 링크 페이지가 어떻게 보일지 표시
-export function LinkPreview({ profile, links, socialLinks, buttonStyle }: LinkPreviewProps) {
+export function LinkPreview({ profile, links, socialLinks, buttonStyle, fontFamily }: LinkPreviewProps) {
   const router = useRouter();
   const { subscription } = useAuthStore();
   
-  // PRO 사용자 여부 확인
   const isProUser = subscription?.plan === "PRO" && subscription?.status === "ACTIVE" && subscription?.hasAccess;
 
-  // 활성화된 링크만 필터링
   const activeLinks = links.filter((link) => link.is_active);
-  // SNS 아이콘은 최대 5개까지만 표시
   const activeSocialLinks = socialLinks
     .filter((link) => link.is_active)
     .slice(0, 5);
 
-  // 사용자가 설정한 배경색 사용 (없으면 기본 화이트)
   const bgColor = profile?.background_color || DEFAULT_BACKGROUND_COLOR;
-  // 버튼 스타일 (prop > profile > default 순서로 우선순위)
   const currentButtonStyle = buttonStyle || profile?.button_style || "default";
+  const currentFontFamily = fontFamily || profile?.font_family || "default";
+  const googleFontUrl = getGoogleFontUrl(currentFontFamily);
+  const fontStyle = currentFontFamily === "default" 
+    ? { fontFamily: "Iseoyun, sans-serif" }
+    : { fontFamily: `"${currentFontFamily}", sans-serif` };
 
   // X 버튼 클릭 시 결제 페이지로 이동
   const handleRemoveWatermark = () => {
@@ -57,12 +59,15 @@ export function LinkPreview({ profile, links, socialLinks, buttonStyle }: LinkPr
   };
 
   return (
-    <div
-      className="relative mx-auto h-[600px] w-[280px] overflow-hidden rounded-[40px] border-[8px] border-gray-800 shadow-xl"
-      style={{ backgroundColor: bgColor }}
-    >
-      {/* 모바일 상단 노치 */}
-      <div className="absolute left-1/2 top-0 z-10 h-6 w-24 -translate-x-1/2 rounded-b-2xl bg-gray-800" />
+    <>
+      {googleFontUrl && (
+        <link href={googleFontUrl} rel="stylesheet" />
+      )}
+      <div
+        className="relative mx-auto h-[600px] w-[280px] overflow-hidden rounded-[40px] border-[8px] border-gray-800 shadow-xl"
+        style={{ backgroundColor: bgColor, ...fontStyle }}
+      >
+        <div className="absolute left-1/2 top-0 z-10 h-6 w-24 -translate-x-1/2 rounded-b-2xl bg-gray-800" />
 
       {/* 스크롤 가능한 콘텐츠 영역 */}
       <div className="h-full overflow-y-auto pt-8 pb-12">
@@ -128,7 +133,6 @@ export function LinkPreview({ profile, links, socialLinks, buttonStyle }: LinkPr
       {!isProUser && (
         <footer className="absolute bottom-2 left-0 right-0 flex justify-center">
           <div className="relative group">
-            {/* X 버튼 - 클릭 시 결제 페이지로 이동 */}
             <button
               onClick={handleRemoveWatermark}
               className="absolute -top-2 -right-2 z-10 flex h-5 w-5 items-center justify-center rounded-full bg-gray-800/80 text-white opacity-70 transition-all hover:opacity-100 hover:bg-primary"
@@ -136,8 +140,6 @@ export function LinkPreview({ profile, links, socialLinks, buttonStyle }: LinkPr
             >
               <X className="h-3 w-3" />
             </button>
-
-            {/* PPOPLINK 로고 */}
             <a
               href="/"
               target="_blank"
@@ -149,6 +151,7 @@ export function LinkPreview({ profile, links, socialLinks, buttonStyle }: LinkPr
           </div>
         </footer>
       )}
-    </div>
+      </div>
+    </>
   );
 }

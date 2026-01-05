@@ -20,8 +20,9 @@ import {
 import { ImageCropModal } from "@/components/ui/ImageCropModal";
 import { LoginRequiredModal } from "@/components/ui/LoginRequiredModal";
 import { PASTEL_COLORS } from "@/lib/constants/colors";
+import { FONT_OPTIONS, getGoogleFontUrl } from "@/lib/constants/fonts";
 import { useIsMobile } from "@/lib/hooks/useIsMobile";
-import { ButtonStyle } from "@/lib/api/auth";
+import { ButtonStyle, FontFamily } from "@/lib/api/auth";
 
 // 버튼 스타일 옵션 정의
 const BUTTON_STYLES: { id: ButtonStyle; label: string; description: string }[] =
@@ -94,14 +95,15 @@ export default function LinksPage() {
     bio: "",
     background_color: "#ffffff",
     button_style: "default" as ButtonStyle,
+    font_family: "default" as FontFamily,
   });
 
-  // 원본 프로필 데이터 (dirty state 비교용)
   const [originalFormData, setOriginalFormData] = useState({
     display_name: "",
     bio: "",
     background_color: "#ffffff",
     button_style: "default" as ButtonStyle,
+    font_family: "default" as FontFamily,
   });
 
   // 프로필 저장 관련 상태
@@ -212,12 +214,14 @@ export default function LinksPage() {
           bio: tempProfile.bio || "",
           background_color: tempProfile.background_color || "#ffffff",
           button_style: (tempProfile.button_style || "default") as ButtonStyle,
+          font_family: (tempProfile.font_family || "default") as FontFamily,
         });
         setOriginalFormData({
           display_name: tempProfile.display_name || "",
           bio: tempProfile.bio || "",
           background_color: tempProfile.background_color || "#ffffff",
           button_style: (tempProfile.button_style || "default") as ButtonStyle,
+          font_family: (tempProfile.font_family || "default") as FontFamily,
         });
       }
       loadLinksFromSessionStorage();
@@ -259,6 +263,7 @@ export default function LinksPage() {
         bio: profile.bio || "",
         background_color: profile.background_color || "#ffffff",
         button_style: (profile.button_style || "default") as ButtonStyle,
+        font_family: (profile.font_family || "default") as FontFamily,
       };
       setFormData(data);
       setOriginalFormData(data);
@@ -269,6 +274,7 @@ export default function LinksPage() {
     profile?.bio,
     profile?.background_color,
     profile?.button_style,
+    profile?.font_family,
   ]);
 
   // 공개 프로필 URL 설정 (클라이언트에서만, public_link_id 기반)
@@ -285,7 +291,8 @@ export default function LinksPage() {
     formData.display_name !== originalFormData.display_name ||
     formData.bio !== originalFormData.bio ||
     formData.background_color !== originalFormData.background_color ||
-    formData.button_style !== originalFormData.button_style;
+    formData.button_style !== originalFormData.button_style ||
+    formData.font_family !== originalFormData.font_family;
 
   const validateForm = () => {
     const errors: { title?: string; url?: string } = {};
@@ -346,6 +353,7 @@ export default function LinksPage() {
         bio: formData.bio || undefined,
         background_color: formData.background_color,
         button_style: formData.button_style,
+        font_family: formData.font_family,
       });
 
       setOriginalFormData({ ...formData });
@@ -778,7 +786,51 @@ export default function LinksPage() {
               </div>
             </div>
 
-            {/* 프로필 저장 버튼 */}
+            <div>
+              <label className="mb-2 block text-sm font-semibold text-gray-700">
+                폰트
+              </label>
+              {FONT_OPTIONS.map((option) => {
+                const googleFontUrl = getGoogleFontUrl(option.value);
+                return googleFontUrl ? (
+                  <link
+                    key={`mobile-font-${option.value}`}
+                    href={googleFontUrl}
+                    rel="stylesheet"
+                  />
+                ) : null;
+              })}
+              <div className="grid grid-cols-2 gap-2">
+                {FONT_OPTIONS.map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        font_family: option.value,
+                      }))
+                    }
+                    disabled={isProfileSaving}
+                    className={`flex flex-col items-center gap-1.5 rounded-lg border-2 p-2 transition-all ${
+                      formData.font_family === option.value
+                        ? "border-primary ring-2 ring-primary/30"
+                        : "border-gray-200"
+                    } ${isProfileSaving ? "opacity-50 cursor-not-allowed" : ""}`}
+                    style={{
+                      fontFamily:
+                        option.value === "default"
+                          ? "Iseoyun, sans-serif"
+                          : `"${option.value}", sans-serif`,
+                    }}
+                    aria-label={`폰트 ${option.label} 선택`}
+                  >
+                    <span className="block text-sm">{option.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <div className="pt-2">
               <Button
                 variant="primary"
@@ -1183,6 +1235,7 @@ export default function LinksPage() {
                 links={previewLinks}
                 socialLinks={previewSocialLinks}
                 buttonStyle={formData.button_style}
+                fontFamily={formData.font_family}
                 onShareLinkClick={handleGetShareLink}
               />
             </div>
@@ -1401,6 +1454,51 @@ export default function LinksPage() {
                         <span className="text-[10px] font-medium text-gray-600">
                           {style.label}
                         </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="mb-1.5 block text-sm font-semibold text-gray-700">
+                    폰트
+                  </label>
+                  {FONT_OPTIONS.map((option) => {
+                    const googleFontUrl = getGoogleFontUrl(option.value);
+                    return googleFontUrl ? (
+                      <link
+                        key={`font-${option.value}`}
+                        href={googleFontUrl}
+                        rel="stylesheet"
+                      />
+                    ) : null;
+                  })}
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {FONT_OPTIONS.map((option) => (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={() =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            font_family: option.value,
+                          }))
+                        }
+                        disabled={isProfileSaving}
+                        className={`flex flex-col items-center gap-1 rounded-md border-2 p-2 transition-all hover:scale-[1.02] ${
+                          formData.font_family === option.value
+                            ? "border-primary ring-1 ring-primary/30"
+                            : "border-gray-200 hover:border-gray-300"
+                        } ${isProfileSaving ? "opacity-50 cursor-not-allowed" : ""}`}
+                        style={{
+                          fontFamily:
+                            option.value === "default"
+                              ? "Iseoyun, sans-serif"
+                              : `"${option.value}", sans-serif`,
+                        }}
+                        aria-label={`폰트 ${option.label} 선택`}
+                      >
+                        <span className="block text-sm">{option.label}</span>
                       </button>
                     ))}
                   </div>
@@ -1762,6 +1860,7 @@ export default function LinksPage() {
             links={previewLinks}
             socialLinks={previewSocialLinks}
             buttonStyle={formData.button_style}
+            fontFamily={formData.font_family}
             onShareLinkClick={handleGetShareLink}
           />
         </div>
