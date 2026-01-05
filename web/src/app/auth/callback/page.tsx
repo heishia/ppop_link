@@ -4,8 +4,6 @@ import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { authApi } from "@/lib/api/auth";
 import { useAuthStore } from "@/store/authStore";
-import { useProfileStore } from "@/store/profileStore";
-import { useLinksStore } from "@/store/linksStore";
 import { syncSessionDataToServer } from "@/lib/utils/syncSessionData";
 import Link from "next/link";
 
@@ -30,32 +28,18 @@ function AuthCallbackContent() {
           throw new Error("Missing callback parameters");
         }
 
-        // State 검증
         const savedState = sessionStorage.getItem("oauth_state");
         if (savedState !== state) {
           throw new Error("Invalid state parameter");
         }
 
-        // 토큰 교환
         const response = await authApi.oauthCallback({ code, state });
         setUser(response.user);
 
-        // 세션 스토리지 정리
         sessionStorage.removeItem("oauth_state");
 
-        // 세션 데이터 동기화
         await syncSessionDataToServer();
 
-        // 대시보드 데이터 프리로드
-        await Promise.all([
-          useProfileStore.getState().fetchProfile(),
-          useLinksStore.getState().fetchLinks(),
-          useLinksStore.getState().fetchSocialLinks(),
-        ]).catch((err) => {
-          console.warn("Failed to preload dashboard data:", err);
-        });
-
-        // 대시보드로 이동
         router.push("/dashboard/links");
       } catch (err) {
         console.error("OAuth callback error:", err);
