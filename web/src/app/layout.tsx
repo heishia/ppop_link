@@ -86,6 +86,11 @@ export default function RootLayout({
   return (
     <html lang="ko">
       <head>
+        <script
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2075129570809969"
+          crossOrigin="anonymous"
+        />
         {/* 모바일 최적화 */}
         <meta
           name="viewport"
