@@ -64,6 +64,8 @@ class PublicService:
             theme=user_data.get("theme", "default"),
             button_style=user_data.get("button_style", "default"),
             font_family=user_data.get("font_family", "default"),
+            contact_email=user_data.get("contact_email"),
+            contact_message=user_data.get("contact_message"),
             links=links,
             social_links=social_links,
             is_pro_user=is_pro_user
