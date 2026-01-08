@@ -38,6 +38,15 @@ const config: Config = {
       spacing: {
         "button-section": "82px",
       },
+      animation: {
+        "pulse-slow": "pulse-slow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+      },
+      keyframes: {
+        "pulse-slow": {
+          "0%, 100%": { opacity: "1", transform: "scale(1)" },
+          "50%": { opacity: "0.9", transform: "scale(1.05)" },
+        },
+      },
     },
   },
   plugins: [],

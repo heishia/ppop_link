@@ -96,6 +96,8 @@ export default function LinksPage() {
     background_color: "#ffffff",
     button_style: "default" as ButtonStyle,
     font_family: "default" as FontFamily,
+    contact_email: "",
+    contact_message: "",
   });
 
   const [originalFormData, setOriginalFormData] = useState({
@@ -104,6 +106,8 @@ export default function LinksPage() {
     background_color: "#ffffff",
     button_style: "default" as ButtonStyle,
     font_family: "default" as FontFamily,
+    contact_email: "",
+    contact_message: "",
   });
 
   // 프로필 저장 관련 상태
@@ -215,6 +219,8 @@ export default function LinksPage() {
           background_color: tempProfile.background_color || "#ffffff",
           button_style: (tempProfile.button_style || "default") as ButtonStyle,
           font_family: (tempProfile.font_family || "default") as FontFamily,
+          contact_email: tempProfile.contact_email || "",
+          contact_message: tempProfile.contact_message || "",
         });
         setOriginalFormData({
           display_name: tempProfile.display_name || "",
@@ -222,6 +228,8 @@ export default function LinksPage() {
           background_color: tempProfile.background_color || "#ffffff",
           button_style: (tempProfile.button_style || "default") as ButtonStyle,
           font_family: (tempProfile.font_family || "default") as FontFamily,
+          contact_email: tempProfile.contact_email || "",
+          contact_message: tempProfile.contact_message || "",
         });
       }
       loadLinksFromSessionStorage();
@@ -264,6 +272,8 @@ export default function LinksPage() {
         background_color: profile.background_color || "#ffffff",
         button_style: (profile.button_style || "default") as ButtonStyle,
         font_family: (profile.font_family || "default") as FontFamily,
+        contact_email: profile.contact_email || "",
+        contact_message: profile.contact_message || "",
       };
       setFormData(data);
       setOriginalFormData(data);
@@ -275,6 +285,8 @@ export default function LinksPage() {
     profile?.background_color,
     profile?.button_style,
     profile?.font_family,
+    profile?.contact_email,
+    profile?.contact_message,
   ]);
 
   // 공개 프로필 URL 설정 (클라이언트에서만, public_link_id 기반)
@@ -292,7 +304,9 @@ export default function LinksPage() {
     formData.bio !== originalFormData.bio ||
     formData.background_color !== originalFormData.background_color ||
     formData.button_style !== originalFormData.button_style ||
-    formData.font_family !== originalFormData.font_family;
+    formData.font_family !== originalFormData.font_family ||
+    formData.contact_email !== originalFormData.contact_email ||
+    formData.contact_message !== originalFormData.contact_message;
 
   const validateForm = () => {
     const errors: { title?: string; url?: string } = {};
@@ -354,6 +368,8 @@ export default function LinksPage() {
         background_color: formData.background_color,
         button_style: formData.button_style,
         font_family: formData.font_family,
+        contact_email: formData.contact_email || undefined,
+        contact_message: formData.contact_message || undefined,
       });
 
       setOriginalFormData({ ...formData });
@@ -828,6 +844,43 @@ export default function LinksPage() {
                     <span className="block text-sm">{option.label}</span>
                   </button>
                 ))}
+              </div>
+            </div>
+
+            <div className="border-t border-gray-200 pt-3 mt-3">
+              <label className="mb-2 block text-sm font-semibold text-gray-700">
+                연락처 설정
+              </label>
+              <div className="space-y-3">
+                <Input
+                  label="연락용 이메일"
+                  value={formData.contact_email}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      contact_email: e.target.value,
+                    }))
+                  }
+                  placeholder="example@gmail.com"
+                  disabled={isProfileSaving}
+                />
+                <Textarea
+                  label="안내 메시지"
+                  value={formData.contact_message}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      contact_message: e.target.value,
+                    }))
+                  }
+                  placeholder="방문자에게 보여줄 안내 메시지를 입력하세요"
+                  rows={2}
+                  maxLength={200}
+                  disabled={isProfileSaving}
+                />
+                <p className="text-[10px] text-gray-500">
+                  이메일을 설정하면 내 페이지에 메시지 아이콘이 표시됩니다
+                </p>
               </div>
             </div>
 
@@ -1501,6 +1554,43 @@ export default function LinksPage() {
                         <span className="block text-sm">{option.label}</span>
                       </button>
                     ))}
+                  </div>
+                </div>
+
+                <div className="border-t border-gray-200 pt-2 mt-2">
+                  <label className="mb-1.5 block text-sm font-semibold text-gray-700">
+                    연락처 설정
+                  </label>
+                  <div className="space-y-2">
+                    <Input
+                      label="연락용 이메일"
+                      value={formData.contact_email}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          contact_email: e.target.value,
+                        }))
+                      }
+                      placeholder="example@gmail.com"
+                      disabled={isProfileSaving}
+                    />
+                    <Textarea
+                      label="안내 메시지"
+                      value={formData.contact_message}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          contact_message: e.target.value,
+                        }))
+                      }
+                      placeholder="방문자에게 보여줄 안내 메시지"
+                      rows={2}
+                      maxLength={200}
+                      disabled={isProfileSaving}
+                    />
+                    <p className="text-[10px] text-gray-500">
+                      이메일 설정 시 메시지 아이콘이 표시됩니다
+                    </p>
                   </div>
                 </div>
               </div>

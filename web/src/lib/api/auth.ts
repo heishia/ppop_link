@@ -17,6 +17,8 @@ export interface User {
   theme: string;
   button_style: ButtonStyle;
   font_family: FontFamily;
+  contact_email: string | null;
+  contact_message: string | null;
   is_active: boolean;
   is_admin: boolean;
   created_at: string;

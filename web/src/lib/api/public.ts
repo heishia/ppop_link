@@ -17,6 +17,8 @@ export interface PublicProfile {
   theme: string;
   button_style: ButtonStyle;
   font_family: FontFamily;
+  contact_email: string | null;
+  contact_message: string | null;
   links: Link[];
   social_links: SocialLink[];
   is_pro_user: boolean;

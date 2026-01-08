@@ -62,6 +62,8 @@ interface ProfileState {
     background_color?: string;
     button_style?: ButtonStyle;
     font_family?: FontFamily;
+    contact_email?: string;
+    contact_message?: string;
   }) => Promise<void>;
   updateTheme: (theme: string) => Promise<void>;
   uploadProfileImage: (file: File) => Promise<void>;

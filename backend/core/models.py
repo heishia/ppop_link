@@ -87,6 +87,8 @@ class UserUpdate(BaseModel):
     theme: Optional[str] = None
     button_style: Optional[ButtonStyle] = None
     font_family: Optional[FontFamily] = None
+    contact_email: Optional[str] = Field(None, max_length=255)
+    contact_message: Optional[str] = Field(None, max_length=500)
 
 
 class User(UserBase, TimestampMixin):
@@ -101,6 +103,8 @@ class User(UserBase, TimestampMixin):
     theme: str = "default"
     button_style: str = "default"
     font_family: str = "default"
+    contact_email: Optional[str] = None
+    contact_message: Optional[str] = None
     is_active: bool = True
     
     model_config = ConfigDict(from_attributes=True)
@@ -195,6 +199,8 @@ class PublicProfile(BaseModel):
     theme: str = "default"
     button_style: str = "default"
     font_family: str = "default"
+    contact_email: Optional[str] = None
+    contact_message: Optional[str] = None
     links: List[Link] = []
     social_links: List[SocialLink] = []
     is_pro_user: bool = False

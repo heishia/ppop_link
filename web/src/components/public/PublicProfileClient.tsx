@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { MobileContainer } from "@/components/layout/MobileContainer";
 import { Avatar } from "@/components/ui/Avatar";
 import { PublicProfile } from "@/lib/api/public";
 import { PublicLinkButton } from "./PublicLinkButton";
 import { SocialIcons } from "./SocialIcons";
+import { ContactModal } from "./ContactModal";
 import { DEFAULT_BACKGROUND_COLOR } from "@/lib/constants/colors";
 import { getGoogleFontUrl } from "@/lib/constants/fonts";
 
@@ -14,6 +15,8 @@ interface PublicProfileClientProps {
 }
 
 export function PublicProfileClient({ profile }: PublicProfileClientProps) {
+  const [isContactModalOpen, setIsContactModalOpen] = useState(false);
+  
   const activeLinks = profile.links.filter((link) => link.is_active);
   const activeSocialLinks = profile.social_links.filter(
     (link) => link.is_active
@@ -23,6 +26,7 @@ export function PublicProfileClient({ profile }: PublicProfileClientProps) {
   const isProUser = profile.is_pro_user || false;
   const fontFamily = profile.font_family || "default";
   const googleFontUrl = getGoogleFontUrl(fontFamily);
+  const hasContactEmail = !!profile.contact_email;
   
   const fontStyle = fontFamily === "default" 
     ? { fontFamily: "Iseoyun, sans-serif" }
@@ -97,6 +101,36 @@ export function PublicProfileClient({ profile }: PublicProfileClientProps) {
           </a>
         </footer>
       )}
+
+      {hasContactEmail && (
+        <button
+          onClick={() => setIsContactModalOpen(true)}
+          className="fixed top-4 right-4 z-40 flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-lg transition-all duration-300 hover:scale-110 hover:shadow-xl active:scale-95 animate-pulse-slow"
+          aria-label="메시지 보내기"
+        >
+          <svg
+            className="h-6 w-6"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+            />
+          </svg>
+        </button>
+      )}
+
+      <ContactModal
+        isOpen={isContactModalOpen}
+        onClose={() => setIsContactModalOpen(false)}
+        contactEmail={profile.contact_email || ""}
+        contactMessage={profile.contact_message}
+        displayName={profile.display_name}
+      />
     </main>
   );
 }

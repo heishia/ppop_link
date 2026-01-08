@@ -14,6 +14,8 @@ class ProfileUpdateRequest(BaseModel):
     background_color: Optional[str] = Field(None, pattern=r"^#[0-9A-Fa-f]{6}$")
     button_style: Optional[Literal["default", "outline", "filled"]] = None
     font_family: Optional[Literal["default", "Noto Sans KR", "Nanum Gothic", "Gowun Batang"]] = None
+    contact_email: Optional[str] = Field(None, max_length=255)
+    contact_message: Optional[str] = Field(None, max_length=500)
 
 
 class ThemeUpdateRequest(BaseModel):
