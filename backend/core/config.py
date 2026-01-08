@@ -105,11 +105,13 @@ class Settings(BaseSettings):
         # 개발: "lax" 사용 (localhost끼리는 같은 사이트)
         return "lax"
 
+    COOKIE_DOMAIN: str = ""
+    
     @property
     def cookie_domain(self) -> str | None:
         """쿠키 Domain 설정"""
-        # Railway 환경에서는 domain을 명시하지 않는 것이 좋음
-        # 브라우저가 자동으로 현재 도메인을 사용
+        if self.COOKIE_DOMAIN:
+            return self.COOKIE_DOMAIN
         return None
 
     model_config = SettingsConfigDict(
