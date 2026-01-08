@@ -48,6 +48,42 @@ export const profileApi = {
     return response.data;
   },
 
+  getPresignedUploadUrl: async (): Promise<{
+    signed_url: string;
+    token: string | null;
+    path: string;
+    file_path: string;
+    public_url: string;
+  }> => {
+    const response = await apiClient.post("/api/profile/image/presigned-url");
+    return response.data;
+  },
+
+  uploadToPresignedUrl: async (signedUrl: string, file: File): Promise<void> => {
+    const response = await fetch(signedUrl, {
+      method: "PUT",
+      body: file,
+      headers: {
+        "Content-Type": file.type,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Upload failed: ${response.status}`);
+    }
+  },
+
+  confirmProfileImageUpload: async (
+    publicUrl: string
+  ): Promise<{ data: User }> => {
+    const response = await apiClient.post<{ data: User }>(
+      "/api/profile/image/confirm",
+      null,
+      { params: { public_url: publicUrl } }
+    );
+    return response.data;
+  },
+
   uploadBackgroundImage: async (file: File): Promise<{ url: string }> => {
     const formData = new FormData();
     formData.append("file", file);

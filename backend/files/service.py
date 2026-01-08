@@ -23,6 +23,39 @@ ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp"]
 
 
 class FileService:
+    def create_presigned_upload_url(
+        self,
+        bucket: str,
+        user_id: UUID,
+        prefix: str,
+        extension: str = ".jpg"
+    ) -> dict:
+        file_name = f"{prefix}_{user_id}_{uuid4().hex[:8]}{extension}"
+        file_path = f"{user_id}/{file_name}"
+        
+        try:
+            result = db.storage.from_(bucket).create_signed_upload_url(path=file_path)
+            public_url = db.storage.from_(bucket).get_public_url(file_path)
+            
+            logger.info(f"Presigned URL created: {file_path}")
+            return {
+                "signed_url": result.get("signedUrl") or result.get("signed_url"),
+                "token": result.get("token"),
+                "path": result.get("path") or file_path,
+                "file_path": file_path,
+                "public_url": public_url
+            }
+        except Exception as e:
+            logger.error(f"Failed to create presigned URL: {e}")
+            raise FileUploadError(detail=str(e))
+    
+    def create_profile_image_presigned_url(self, user_id: UUID) -> dict:
+        return self.create_presigned_upload_url(
+            bucket=settings.STORAGE_BUCKET_PROFILES,
+            user_id=user_id,
+            prefix="profile"
+        )
+    
     async def upload_profile_image(
         self,
         user_id: UUID,

@@ -74,7 +74,7 @@ export default function LinksPage() {
     hasFetched: profileFetched,
     fetchProfile,
     updateProfile,
-    uploadProfileImage,
+    uploadProfileImageWithPresignedUrl,
     clearError: clearProfileError,
   } = useProfileStore();
 
@@ -526,24 +526,25 @@ export default function LinksPage() {
     }
   };
 
-  // 크롭 완료 후 이미지 업로드
   const handleCroppedImageUpload = async (croppedBlob: Blob) => {
     setSavingField("profile_image");
     setImageUploadComplete(false);
     try {
-      // Blob을 File로 변환
       const file = new File([croppedBlob], "profile.jpg", {
         type: "image/jpeg",
       });
-      await uploadProfileImage(file);
-      // 업로드 성공 표시
+      await uploadProfileImageWithPresignedUrl(file);
       setImageUploadComplete(true);
-      // 3초 후 완료 메시지 숨기기
       setTimeout(() => {
         setImageUploadComplete(false);
       }, 3000);
     } catch (error) {
       console.error("Failed to upload profile image:", error);
+      setProfileSaveMessage({
+        type: "error",
+        text: "이미지 업로드 실패. 다시 시도해주세요.",
+      });
+      setTimeout(() => setProfileSaveMessage(null), 5000);
     } finally {
       setSavingField(null);
     }

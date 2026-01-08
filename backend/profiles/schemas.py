@@ -38,3 +38,12 @@ class ShareLinkResponse(BaseModel):
     public_link_id: str
     share_url: str
 
+
+class PresignedUploadUrlResponse(BaseModel):
+    success: bool = True
+    signed_url: str
+    token: Optional[str] = None
+    path: str
+    file_path: str
+    public_url: str
+

@@ -67,9 +67,10 @@ interface ProfileState {
   }) => Promise<void>;
   updateTheme: (theme: string) => Promise<void>;
   uploadProfileImage: (file: File) => Promise<void>;
+  uploadProfileImageWithPresignedUrl: (file: File) => Promise<string>;
   uploadBackgroundImage: (file: File) => Promise<void>;
   clearError: () => void;
-  
+
   // 세션 스토리지 관련
   saveToSessionStorage: (data: Partial<User>) => void;
   loadFromSessionStorage: () => Partial<User> | null;
@@ -83,12 +84,13 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
   lastFetched: null,
   hasFetched: false,
 
-  setProfile: (profile) => set({ profile, lastFetched: Date.now(), hasFetched: true }),
+  setProfile: (profile) =>
+    set({ profile, lastFetched: Date.now(), hasFetched: true }),
 
   fetchProfile: async (force = false) => {
     const { lastFetched } = get();
     const now = Date.now();
-    
+
     if (!force && lastFetched && now - lastFetched < CACHE_CONFIG.PROFILE) {
       return;
     }
@@ -96,7 +98,12 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const response = await profileApi.getProfile();
-      set({ profile: response.data, isLoading: false, lastFetched: now, hasFetched: true });
+      set({
+        profile: response.data,
+        isLoading: false,
+        lastFetched: now,
+        hasFetched: true,
+      });
     } catch (error: unknown) {
       set({
         error: parseApiError(error, "Failed to fetch profile"),
@@ -108,7 +115,7 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
 
   updateProfile: async (data) => {
     const { isAuthenticated } = useAuthStore.getState();
-    
+
     // 비로그인 상태면 세션 스토리지에 저장
     if (!isAuthenticated) {
       const currentProfile = get().profile;
@@ -120,7 +127,7 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
       set({ profile: tempProfile as User });
       return;
     }
-    
+
     // 로그인 상태면 서버에 저장
     set({ isLoading: true, error: null });
     try {
@@ -151,13 +158,37 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const response = await profileApi.uploadProfileImage(file);
-      // Update profile with new image URL
       set((state) => ({
         profile: state.profile
           ? { ...state.profile, profile_image_url: response.url }
           : null,
         isLoading: false,
       }));
+    } catch (error: unknown) {
+      set({
+        error: parseApiError(error, "Failed to upload image"),
+        isLoading: false,
+      });
+      throw error;
+    }
+  },
+
+  uploadProfileImageWithPresignedUrl: async (file: File) => {
+    set({ isLoading: true, error: null });
+    try {
+      const { signed_url, public_url } =
+        await profileApi.getPresignedUploadUrl();
+
+      await profileApi.uploadToPresignedUrl(signed_url, file);
+
+      const response = await profileApi.confirmProfileImageUpload(public_url);
+
+      set((state) => ({
+        profile: response.data || state.profile,
+        isLoading: false,
+      }));
+
+      return public_url;
     } catch (error: unknown) {
       set({
         error: parseApiError(error, "Failed to upload image"),
@@ -188,7 +219,7 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
   },
 
   clearError: () => set({ error: null }),
-  
+
   // 세션 스토리지 관련 메서드
   saveToSessionStorage: (data: Partial<User>) => {
     try {
@@ -197,7 +228,7 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
       console.error("Failed to save profile to session storage:", error);
     }
   },
-  
+
   loadFromSessionStorage: () => {
     try {
       const data = sessionStorage.getItem(SESSION_STORAGE_PROFILE_KEY);
@@ -207,7 +238,7 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
       return null;
     }
   },
-  
+
   clearSessionStorage: () => {
     try {
       sessionStorage.removeItem(SESSION_STORAGE_PROFILE_KEY);

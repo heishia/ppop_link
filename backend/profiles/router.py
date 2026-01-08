@@ -12,7 +12,8 @@ from backend.profiles.schemas import (
     ThemeUpdateRequest,
     ProfileResponse,
     ImageUploadResponse,
-    ShareLinkResponse
+    ShareLinkResponse,
+    PresignedUploadUrlResponse
 )
 from backend.profiles.service import profile_service
 
@@ -41,6 +42,23 @@ async def update_theme(
     current_user: User = Depends(get_current_user)
 ):
     profile = await profile_service.update_theme(current_user.id, request)
+    return ProfileResponse(data=profile)
+
+
+@router.post("/image/presigned-url", response_model=PresignedUploadUrlResponse)
+async def get_presigned_upload_url(
+    current_user: User = Depends(get_current_user)
+):
+    result = profile_service.get_profile_image_presigned_url(current_user.id)
+    return PresignedUploadUrlResponse(**result)
+
+
+@router.post("/image/confirm", response_model=ProfileResponse)
+async def confirm_profile_image_upload(
+    public_url: str,
+    current_user: User = Depends(get_current_user)
+):
+    profile = await profile_service.confirm_profile_image_upload(current_user.id, public_url)
     return ProfileResponse(data=profile)
 
 

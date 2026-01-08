@@ -70,6 +70,20 @@ class ProfileService:
         logger.info(f"Theme updated: user_id={user_id}")
         return self._map_to_user(result.data[0])
     
+    def get_profile_image_presigned_url(self, user_id: UUID) -> dict:
+        result = file_service.create_profile_image_presigned_url(user_id)
+        logger.info(f"Profile image presigned URL created: user_id={user_id}")
+        return result
+    
+    async def confirm_profile_image_upload(self, user_id: UUID, public_url: str) -> User:
+        db.table(self.TABLE_USERS).update({
+            "profile_image_url": public_url,
+            "updated_at": datetime.utcnow().isoformat()
+        }).eq("id", str(user_id)).execute()
+        
+        logger.info(f"Profile image URL confirmed: user_id={user_id}")
+        return await self.get_profile(user_id)
+    
     async def upload_profile_image(self, user_id: UUID, file: UploadFile) -> str:
         url = await file_service.upload_profile_image(user_id, file)
         
