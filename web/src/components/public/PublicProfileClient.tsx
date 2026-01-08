@@ -105,19 +105,19 @@ export function PublicProfileClient({ profile }: PublicProfileClientProps) {
       {hasContactEmail && (
         <button
           onClick={() => setIsContactModalOpen(true)}
-          className="fixed top-4 right-4 z-40 flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-lg transition-all duration-300 hover:scale-110 hover:shadow-xl active:scale-95 animate-pulse-slow"
+          className="fixed top-4 right-4 z-40 flex h-10 w-10 items-center justify-center text-gray-900 transition-all duration-300 hover:scale-110 active:scale-95 animate-pulse-slow"
           aria-label="메시지 보내기"
         >
           <svg
-            className="h-6 w-6"
+            className="h-7 w-7"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
+            strokeWidth={1.5}
           >
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
-              strokeWidth={2}
               d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
             />
           </svg>
@@ -129,7 +129,6 @@ export function PublicProfileClient({ profile }: PublicProfileClientProps) {
         onClose={() => setIsContactModalOpen(false)}
         contactEmail={profile.contact_email || ""}
         contactMessage={profile.contact_message}
-        displayName={profile.display_name}
       />
     </main>
   );
