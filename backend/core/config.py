@@ -56,6 +56,9 @@ class Settings(BaseSettings):
     # Cookie Settings (for cross-origin development)
     COOKIE_SAMESITE: str = ""  # "lax", "strict", or "none" (none for cross-origin)
     
+    # Discord Webhook (보안 알림용)
+    DISCORD_WEBHOOK_URL: str = ""
+    
     @property
     def cors_origins_list(self) -> List[str]:
         """CORS 허용 오리진 목록"""

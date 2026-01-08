@@ -50,21 +50,21 @@ def create_app() -> FastAPI:
         limiter = Limiter(key_func=get_remote_address, default_limits=["200/minute"])
         app.state.limiter = limiter
         
-        # Rate limit 예외 핸들러 (Sentry 연동 + 자동 차단)
         @app.exception_handler(RateLimitExceeded)
         async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
-            # 클라이언트 IP
             ip = get_remote_address(request)
             path = request.url.path
             
-            # Sentry에 기록
             try:
-                from backend.core.sentry import capture_rate_limit_exceeded
-                capture_rate_limit_exceeded(ip, path, str(exc.detail))
+                from backend.core.discord_service import discord_service
+                await discord_service.send_rate_limit_alert(
+                    ip_address=ip,
+                    path=path,
+                    limit_info=str(exc.detail)
+                )
             except Exception as e:
-                logger.debug(f"Failed to send to Sentry: {e}")
+                logger.debug(f"Failed to send Discord alert: {e}")
             
-            # 자동 차단 확인
             try:
                 from backend.core.security_service import security_service
                 await security_service.check_and_auto_blacklist(
@@ -74,7 +74,6 @@ def create_app() -> FastAPI:
             except Exception as e:
                 logger.error(f"Failed to check auto-blacklist: {e}")
             
-            # 기본 핸들러 호출
             return _rate_limit_exceeded_handler(request, exc)
         
         logger.info("Rate limiting configured: 200 requests/minute per IP")

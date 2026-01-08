@@ -14,6 +14,7 @@ from starlette.types import ASGIApp
 
 from backend.core.logger import get_logger
 from backend.core.security_service import security_service
+from backend.core.discord_service import discord_service
 from backend.core.config import settings
 
 logger = get_logger(__name__)
@@ -111,24 +112,21 @@ class MaliciousPatternMiddleware(BaseHTTPMiddleware):
                     }
                 )
                 
-                # 위반 기록 및 자동 차단 확인
                 await security_service.check_and_auto_blacklist(
                     ip, 
                     security_service.VIOLATION_MALICIOUS_PATTERN
                 )
                 
-                # Sentry에 보안 이벤트 기록
                 try:
-                    from backend.core.sentry import capture_security_event
-                    capture_security_event(
-                        event_type="malicious_pattern_blocked",
+                    await discord_service.send_security_alert(
+                        event_type="악성 패턴 감지",
                         ip_address=ip,
                         path=path,
                         user_agent=request.headers.get("user-agent", "unknown"),
-                        severity="warning"
+                        reason="악성 URL 패턴이 감지되어 차단됨"
                     )
                 except Exception as e:
-                    logger.debug(f"Failed to send to Sentry: {e}")
+                    logger.debug(f"Failed to send Discord alert: {e}")
                 
                 # 403 Forbidden 반환
                 return JSONResponse(
@@ -190,19 +188,6 @@ class IPBlacklistMiddleware(BaseHTTPMiddleware):
                     "reason": reason
                 }
             )
-            
-            # Sentry에 보안 이벤트 기록
-            try:
-                from backend.core.sentry import capture_security_event
-                capture_security_event(
-                    event_type="ip_blacklisted_access_attempt",
-                    ip_address=ip,
-                    path=path,
-                    reason=reason or "unknown",
-                    severity="warning"
-                )
-            except Exception as e:
-                logger.debug(f"Failed to send to Sentry: {e}")
             
             # 403 Forbidden 반환
             return JSONResponse(

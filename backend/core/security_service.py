@@ -215,29 +215,28 @@ class SecurityService:
     
     async def check_and_auto_blacklist(self, ip: str, violation_type: str) -> bool:
         """
-        위반 횟수를 확인하고 임계값 초과 시 자동 차단
+        위반 횟수를 확인하고 로깅 (자동 차단 비활성화)
+        
+        Note: 자동 차단은 오탐 위험이 높아 비활성화됨.
+              대신 로깅만 하고, 필요시 수동으로 차단.
         
         Returns:
-            차단 여부
+            항상 False (차단하지 않음)
         """
         if violation_type not in self.AUTO_BLOCK_THRESHOLDS:
             return False
         
         threshold, window, block_hours = self.AUTO_BLOCK_THRESHOLDS[violation_type]
         
-        # 위반 기록
         self.record_violation(ip, violation_type)
         
-        # 위반 횟수 확인
         violation_count = self._tracker.get_violation_count(ip, violation_type, window)
         
         if violation_count >= threshold:
-            reason = f"Auto-blocked: {violation_count} {violation_type} violations in {window}s"
-            success = await self.add_to_blacklist(ip, reason, block_hours)
-            
-            if success:
-                logger.warning(f"Auto-blacklisted {ip}: {reason}")
-                return True
+            logger.warning(
+                f"Violation threshold exceeded (NOT auto-blocking): "
+                f"{ip} has {violation_count} {violation_type} violations in {window}s"
+            )
         
         return False
     
