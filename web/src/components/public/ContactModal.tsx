@@ -104,9 +104,7 @@ export function ContactModal({
             <span>이메일 보내기</span>
           </button>
 
-          <p className="mt-3 text-xs text-gray-400">
-            이메일 앱이 열립니다
-          </p>
+          <p className="mt-3 text-xs text-gray-400">이메일 앱이 열립니다</p>
         </div>
       </div>
     </div>

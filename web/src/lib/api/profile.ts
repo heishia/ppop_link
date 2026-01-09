@@ -61,7 +61,10 @@ export const profileApi = {
     return response.data;
   },
 
-  uploadToPresignedUrl: async (signedUrl: string, file: File): Promise<void> => {
+  uploadToPresignedUrl: async (
+    signedUrl: string,
+    file: File
+  ): Promise<void> => {
     const response = await fetch(signedUrl, {
       method: "PUT",
       body: file,
@@ -102,11 +105,14 @@ export const profileApi = {
     return response.data;
   },
 
-  getShareLink: async (): Promise<{ public_link_id: string; share_url: string }> => {
-    const response = await apiClient.get<{ public_link_id: string; share_url: string }>(
-      "/api/profile/share-link"
-    );
+  getShareLink: async (): Promise<{
+    public_link_id: string;
+    share_url: string;
+  }> => {
+    const response = await apiClient.get<{
+      public_link_id: string;
+      share_url: string;
+    }>("/api/profile/share-link");
     return response.data;
   },
 };
-
