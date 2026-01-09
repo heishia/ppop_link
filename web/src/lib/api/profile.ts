@@ -7,6 +7,8 @@ export interface ProfileUpdateData {
   background_color?: string;
   button_style?: ButtonStyle;
   font_family?: FontFamily;
+  contact_email?: string;
+  contact_message?: string;
 }
 
 export interface ThemeUpdateData {

@@ -44,8 +44,7 @@ export function ContactModal({
   }, [isOpen, onClose]);
 
   const handleSendEmail = () => {
-    const gmailComposeUrl = `https://mail.google.com/mail/?view=cm&to=${encodeURIComponent(contactEmail)}`;
-    window.open(gmailComposeUrl, "_blank");
+    window.location.href = `mailto:${contactEmail}`;
   };
 
   if (!isOpen) return null;
@@ -91,16 +90,22 @@ export function ContactModal({
           >
             <svg
               className="h-5 w-5"
+              fill="none"
               viewBox="0 0 24 24"
-              fill="currentColor"
+              stroke="currentColor"
+              strokeWidth={2}
             >
-              <path d="M20.283 10.356h-8.327v3.451h4.792c-.446 2.193-2.313 3.453-4.792 3.453a5.27 5.27 0 0 1-5.279-5.28 5.27 5.27 0 0 1 5.279-5.279c1.259 0 2.397.447 3.29 1.178l2.6-2.599c-1.584-1.381-3.615-2.233-5.89-2.233a8.908 8.908 0 0 0-8.934 8.934 8.907 8.907 0 0 0 8.934 8.934c4.467 0 8.529-3.249 8.529-8.934 0-.528-.081-1.097-.202-1.625z"/>
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+              />
             </svg>
             <span>이메일 보내기</span>
           </button>
 
           <p className="mt-3 text-xs text-gray-400">
-            Gmail 작성 페이지로 이동합니다
+            이메일 앱이 열립니다
           </p>
         </div>
       </div>

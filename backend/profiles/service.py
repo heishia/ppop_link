@@ -177,8 +177,9 @@ class ProfileService:
             button_style=data.get("button_style", "default"),
             font_family=data.get("font_family", "default"),
             theme=data.get("theme", "default"),
+            contact_email=data.get("contact_email"),
+            contact_message=data.get("contact_message"),
             is_active=data.get("is_active", True),
-            is_admin=data.get("is_admin", False),
             created_at=data.get("created_at"),
             updated_at=data.get("updated_at"),
         )
