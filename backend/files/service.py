@@ -25,13 +25,18 @@ ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp"]
 
 
 def get_s3_client():
-    """S3 클라이언트 생성 (Railway Buckets용)"""
+    """S3 클라이언트 생성 (Railway Buckets용 - virtual-hosted-style)"""
     if not settings.S3_ENDPOINT_URL:
         raise ValueError("S3_ENDPOINT_URL is not configured")
     
+    # Railway Buckets uses virtual-hosted-style URLs
+    # Endpoint format: https://bucket-name.storage.railway.app
+    bucket = settings.S3_BUCKET_NAME
+    endpoint = f"https://{bucket}.storage.railway.app"
+    
     return boto3.client(
         's3',
-        endpoint_url=settings.S3_ENDPOINT_URL,
+        endpoint_url=endpoint,
         aws_access_key_id=settings.S3_ACCESS_KEY_ID,
         aws_secret_access_key=settings.S3_SECRET_ACCESS_KEY,
         region_name=settings.S3_REGION,
@@ -57,11 +62,10 @@ class FileService:
     
     def _get_public_url(self, file_path: str) -> str:
         """파일의 공개 URL 생성"""
-        # Railway Buckets URL 형식
+        # Railway Buckets virtual-hosted-style URL 형식
         # https://bucket-name.storage.railway.app/file_path
-        endpoint = settings.S3_ENDPOINT_URL.rstrip('/')
         bucket = settings.S3_BUCKET_NAME
-        return f"{endpoint}/{bucket}/{file_path}"
+        return f"https://{bucket}.storage.railway.app/{file_path}"
     
     def create_presigned_upload_url(
         self,
