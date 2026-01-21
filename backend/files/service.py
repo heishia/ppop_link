@@ -30,17 +30,17 @@ def get_s3_client():
         raise ValueError("S3_ENDPOINT_URL is not configured")
     
     # Railway Buckets uses virtual-hosted-style URLs
-    # Endpoint format: https://bucket-name.storage.railway.app
-    bucket = settings.S3_BUCKET_NAME
-    endpoint = f"https://{bucket}.storage.railway.app"
-    
+    # Use base endpoint and let boto3 construct virtual-hosted URLs
     return boto3.client(
         's3',
-        endpoint_url=endpoint,
+        endpoint_url=settings.S3_ENDPOINT_URL,  # https://storage.railway.app
         aws_access_key_id=settings.S3_ACCESS_KEY_ID,
         aws_secret_access_key=settings.S3_SECRET_ACCESS_KEY,
         region_name=settings.S3_REGION,
-        config=Config(signature_version='s3v4')
+        config=Config(
+            signature_version='s3v4',
+            s3={'addressing_style': 'virtual'}  # virtual-hosted-style 사용
+        )
     )
 
 
