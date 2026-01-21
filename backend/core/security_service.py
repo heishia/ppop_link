@@ -106,24 +106,28 @@ class SecurityService:
         
         try:
             # DB 조회
-            result = db.table(self.TABLE_BLACKLIST).select("*").eq("ip_address", ip).execute()
+            result = db.execute(
+                "SELECT * FROM ip_blacklist WHERE ip_address = %s",
+                (ip,),
+                fetch_one=True
+            )
             
-            if not result.data:
+            if not result:
                 self._cache[ip] = ((False, None), time.time())
                 return False, None
             
-            record = result.data[0]
-            
             # 만료 확인
-            if not record["is_permanent"] and record["expires_at"]:
-                expires_at = datetime.fromisoformat(record["expires_at"].replace("Z", "+00:00"))
+            if not result["is_permanent"] and result["expires_at"]:
+                expires_at = result["expires_at"]
+                if isinstance(expires_at, str):
+                    expires_at = datetime.fromisoformat(expires_at.replace("Z", "+00:00"))
                 if datetime.now(expires_at.tzinfo) > expires_at:
                     # 만료됨 - 삭제
                     await self.remove_from_blacklist(ip)
                     self._cache[ip] = ((False, None), time.time())
                     return False, None
             
-            reason = record["reason"]
+            reason = result["reason"]
             self._cache[ip] = ((True, reason), time.time())
             return True, reason
             
@@ -154,33 +158,36 @@ class SecurityService:
         try:
             expires_at = None
             if not is_permanent and duration_hours:
-                expires_at = (datetime.utcnow() + timedelta(hours=duration_hours)).isoformat()
+                expires_at = datetime.utcnow() + timedelta(hours=duration_hours)
             
             # 기존 레코드 확인
-            existing = db.table(self.TABLE_BLACKLIST).select("*").eq("ip_address", ip).execute()
+            existing = db.execute(
+                "SELECT * FROM ip_blacklist WHERE ip_address = %s",
+                (ip,),
+                fetch_one=True
+            )
             
-            if existing.data:
+            if existing:
                 # 업데이트
-                db.table(self.TABLE_BLACKLIST).update({
-                    "reason": reason,
-                    "expires_at": expires_at,
-                    "is_permanent": is_permanent,
-                    "violation_count": existing.data[0]["violation_count"] + 1,
-                    "last_violation_at": datetime.utcnow().isoformat()
-                }).eq("ip_address", ip).execute()
-                
+                db.execute(
+                    """
+                    UPDATE ip_blacklist 
+                    SET reason = %s, expires_at = %s, is_permanent = %s, 
+                        violation_count = violation_count + 1, last_violation_at = %s
+                    WHERE ip_address = %s
+                    """,
+                    (reason, expires_at, is_permanent, datetime.utcnow(), ip)
+                )
                 logger.warning(f"Updated blacklist entry for {ip}: {reason}")
             else:
                 # 새로 추가
-                db.table(self.TABLE_BLACKLIST).insert({
-                    "ip_address": ip,
-                    "reason": reason,
-                    "expires_at": expires_at,
-                    "is_permanent": is_permanent,
-                    "violation_count": 1,
-                    "last_violation_at": datetime.utcnow().isoformat()
-                }).execute()
-                
+                db.execute(
+                    """
+                    INSERT INTO ip_blacklist (ip_address, reason, expires_at, is_permanent, violation_count, last_violation_at)
+                    VALUES (%s, %s, %s, %s, %s, %s)
+                    """,
+                    (ip, reason, expires_at, is_permanent, 1, datetime.utcnow())
+                )
                 logger.warning(f"Added {ip} to blacklist: {reason} (duration: {duration_hours}h)")
             
             # 캐시 무효화
@@ -196,7 +203,10 @@ class SecurityService:
     async def remove_from_blacklist(self, ip: str) -> bool:
         """IP를 블랙리스트에서 제거"""
         try:
-            db.table(self.TABLE_BLACKLIST).delete().eq("ip_address", ip).execute()
+            db.execute(
+                "DELETE FROM ip_blacklist WHERE ip_address = %s",
+                (ip,)
+            )
             
             # 캐시 무효화
             if ip in self._cache:
@@ -243,11 +253,11 @@ class SecurityService:
     async def get_blacklist(self, limit: int = 100, offset: int = 0) -> List[dict]:
         """블랙리스트 조회"""
         try:
-            result = db.table(self.TABLE_BLACKLIST).select("*").order(
-                "blocked_at", desc=True
-            ).limit(limit).offset(offset).execute()
-            
-            return result.data or []
+            rows = db.execute(
+                "SELECT * FROM ip_blacklist ORDER BY blocked_at DESC LIMIT %s OFFSET %s",
+                (limit, offset)
+            )
+            return rows or []
             
         except Exception as e:
             logger.error(f"Error fetching blacklist: {e}")
@@ -256,12 +266,10 @@ class SecurityService:
     async def get_violation_stats(self) -> dict:
         """위반 통계 조회"""
         try:
-            result = db.table(self.TABLE_BLACKLIST).select(
-                "violation_count, reason"
-            ).execute()
+            rows = db.execute("SELECT violation_count, reason FROM ip_blacklist")
             
-            total_blocked = len(result.data) if result.data else 0
-            total_violations = sum(r["violation_count"] for r in result.data) if result.data else 0
+            total_blocked = len(rows) if rows else 0
+            total_violations = sum(r["violation_count"] for r in rows) if rows else 0
             
             # 현재 메모리의 위반 통계
             active_ips = len(self._tracker._violations)
@@ -285,4 +293,3 @@ class SecurityService:
 
 # 싱글톤 인스턴스
 security_service = SecurityService()
-

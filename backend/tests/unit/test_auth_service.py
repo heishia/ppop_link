@@ -41,10 +41,11 @@ class TestAuthService:
     
     @pytest.mark.asyncio
     async def test_get_user_by_id_returns_user_when_exists(
-        self, auth_service, mock_db, sample_user_data
+        self, auth_service, sample_user_data
     ):
         """Test getting user by ID when user exists"""
-        mock_db.table().select().eq().execute.return_value.data = [sample_user_data]
+        mock_db = MagicMock()
+        mock_db.execute.return_value = sample_user_data
         
         with patch("backend.auth.service.db", mock_db):
             user_id = UUID(sample_user_data["id"])
@@ -56,10 +57,11 @@ class TestAuthService:
     
     @pytest.mark.asyncio
     async def test_get_user_by_id_returns_none_when_not_exists(
-        self, auth_service, mock_db
+        self, auth_service
     ):
         """Test getting user by ID when user doesn't exist"""
-        mock_db.table().select().eq().execute.return_value.data = []
+        mock_db = MagicMock()
+        mock_db.execute.return_value = None
         
         with patch("backend.auth.service.db", mock_db):
             user_id = UUID("123e4567-e89b-12d3-a456-426614174000")
@@ -68,10 +70,11 @@ class TestAuthService:
             assert user is None
     
     @pytest.mark.asyncio
-    async def test_generate_unique_username(self, auth_service, mock_db):
+    async def test_generate_unique_username(self, auth_service):
         """Test unique username generation"""
-        # First call returns no existing user
-        mock_db.table().select().eq().execute.return_value.data = []
+        mock_db = MagicMock()
+        # No existing user found
+        mock_db.execute.return_value = None
         
         with patch("backend.auth.service.db", mock_db):
             username = await auth_service._generate_unique_username("testuser")
@@ -79,12 +82,13 @@ class TestAuthService:
             assert username == "testuser"
     
     @pytest.mark.asyncio
-    async def test_generate_unique_username_with_collision(self, auth_service, mock_db):
+    async def test_generate_unique_username_with_collision(self, auth_service):
         """Test unique username generation when base username exists"""
-        # Mock to return existing user for first call, empty for second
-        mock_db.table().select().eq().execute.side_effect = [
-            MagicMock(data=[{"id": "123"}]),  # First call - username exists
-            MagicMock(data=[]),  # Second call - username_1 available
+        mock_db = MagicMock()
+        # Mock to return existing user for first call, None for second
+        mock_db.execute.side_effect = [
+            {"id": "123"},  # First call - username exists
+            None,  # Second call - username_1 available
         ]
         
         with patch("backend.auth.service.db", mock_db):

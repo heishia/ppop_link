@@ -30,19 +30,39 @@ class AdminService:
     ) -> Tuple[List[UserWithPlan], int]:
         offset = (page - 1) * page_size
         
-        query = db.table(self.TABLE_USERS).select("*", count="exact")
-        
+        # 동적 쿼리 생성
         if search:
-            query = query.or_(f"username.ilike.%{search}%,email.ilike.%{search}%")
-        
-        result = query.order("created_at", desc=True).range(
-            offset, offset + page_size - 1
-        ).execute()
-        
-        total = result.count or 0
+            search_pattern = f"%{search}%"
+            count_result = db.execute(
+                "SELECT COUNT(*) as count FROM users WHERE username ILIKE %s OR email ILIKE %s",
+                (search_pattern, search_pattern),
+                fetch_one=True
+            )
+            total = count_result["count"] if count_result else 0
+            
+            rows = db.execute(
+                """
+                SELECT * FROM users 
+                WHERE username ILIKE %s OR email ILIKE %s 
+                ORDER BY created_at DESC 
+                LIMIT %s OFFSET %s
+                """,
+                (search_pattern, search_pattern, page_size, offset)
+            )
+        else:
+            count_result = db.execute(
+                "SELECT COUNT(*) as count FROM users",
+                fetch_one=True
+            )
+            total = count_result["count"] if count_result else 0
+            
+            rows = db.execute(
+                "SELECT * FROM users ORDER BY created_at DESC LIMIT %s OFFSET %s",
+                (page_size, offset)
+            )
         
         users_with_plans = []
-        for user_data in result.data:
+        for user_data in rows:
             user = self._map_to_user(user_data)
             plan = await self._get_user_plan(UUID(user_data["id"]))
             users_with_plans.append(UserWithPlan(**user.model_dump(), plan=plan))
@@ -51,34 +71,20 @@ class AdminService:
     
     async def get_stats(self) -> AdminStats:
         # 전체 사용자 수
-        users_result = db.table(self.TABLE_USERS).select(
-            "*", count="exact"
-        ).execute()
-        total_users = users_result.count or 0
+        total_users = db.count("users")
         
         # 활성 사용자 수
-        active_result = db.table(self.TABLE_USERS).select(
-            "*", count="exact"
-        ).eq("is_active", True).execute()
-        active_users = active_result.count or 0
+        active_users = db.count("users", "is_active = %s", (True,))
         
         # 전체 링크 수
-        links_result = db.table(self.TABLE_LINKS).select(
-            "*", count="exact"
-        ).execute()
-        total_links = links_result.count or 0
+        total_links = db.count("links")
         
         # 전체 클릭 수
-        clicks_result = db.table(self.TABLE_LINKS).select("click_count").execute()
-        total_clicks = sum(
-            link.get("click_count", 0) or 0 for link in clicks_result.data
-        )
+        clicks_result = db.execute("SELECT COALESCE(SUM(click_count), 0) as total FROM links", fetch_one=True)
+        total_clicks = int(clicks_result["total"]) if clicks_result else 0
         
         # Pro 사용자 수
-        pro_result = db.table(self.TABLE_USER_PLANS).select(
-            "*", count="exact"
-        ).eq("plan_type", PlanType.PRO.value).execute()
-        pro_users = pro_result.count or 0
+        pro_users = db.count("user_plans", "plan_type = %s", (PlanType.PRO.value,))
         
         free_users = total_users - pro_users
         
@@ -97,35 +103,36 @@ class AdminService:
         plan_type: PlanType
     ) -> UserWithPlan:
         # 사용자 확인
-        user_result = db.table(self.TABLE_USERS).select("*").eq(
-            "id", str(user_id)
-        ).execute()
+        user_result = db.execute(
+            "SELECT * FROM users WHERE id = %s",
+            (str(user_id),),
+            fetch_one=True
+        )
         
-        if not user_result.data:
+        if not user_result:
             raise UserNotFoundError()
         
-        user = self._map_to_user(user_result.data[0])
+        user = self._map_to_user(user_result)
         
         # 기존 플랜 확인
         existing_plan = await self._get_user_plan(user_id)
         
         if existing_plan and existing_plan.plan_type != PlanType.BASIC:
             # 기존 플랜 업데이트
-            db.table(self.TABLE_USER_PLANS).update({
-                "plan_type": plan_type.value,
-                "updated_at": datetime.utcnow().isoformat()
-            }).eq("user_id", str(user_id)).execute()
+            db.execute(
+                "UPDATE user_plans SET plan_type = %s, updated_at = %s WHERE user_id = %s",
+                (plan_type.value, datetime.utcnow(), str(user_id))
+            )
         else:
             # 새 플랜 생성
-            now = datetime.utcnow().isoformat()
-            plan_data = {
-                "id": str(uuid4()),
-                "user_id": str(user_id),
-                "plan_type": plan_type.value,
-                "started_at": now,
-                "created_at": now,
-            }
-            db.table(self.TABLE_USER_PLANS).insert(plan_data).execute()
+            now = datetime.utcnow()
+            db.execute(
+                """
+                INSERT INTO user_plans (id, user_id, plan_type, started_at, created_at)
+                VALUES (%s, %s, %s, %s, %s)
+                """,
+                (str(uuid4()), str(user_id), plan_type.value, now, now)
+            )
         
         new_plan = await self._get_user_plan(user_id)
         
@@ -148,46 +155,44 @@ class AdminService:
             UserWithPlan: 업데이트된 사용자 정보
         """
         # 사용자 확인
-        user_result = db.table(self.TABLE_USERS).select("*").eq(
-            "id", str(user_id)
-        ).execute()
+        user_result = db.execute(
+            "SELECT * FROM users WHERE id = %s",
+            (str(user_id),),
+            fetch_one=True
+        )
         
-        if not user_result.data:
+        if not user_result:
             raise UserNotFoundError()
         
         # 관리자 권한 업데이트
-        db.table(self.TABLE_USERS).update({
-            "is_admin": is_admin,
-            "updated_at": datetime.utcnow().isoformat()
-        }).eq("id", str(user_id)).execute()
+        result = db.execute_returning(
+            "UPDATE users SET is_admin = %s, updated_at = %s WHERE id = %s RETURNING *",
+            (is_admin, datetime.utcnow(), str(user_id))
+        )
         
-        # 업데이트된 사용자 정보 조회
-        updated_result = db.table(self.TABLE_USERS).select("*").eq(
-            "id", str(user_id)
-        ).execute()
-        
-        user = self._map_to_user(updated_result.data[0])
+        user = self._map_to_user(result)
         plan = await self._get_user_plan(user_id)
         
         logger.info(f"User admin status updated: user_id={user_id}, is_admin={is_admin}")
         return UserWithPlan(**user.model_dump(), plan=plan)
     
     async def _get_user_plan(self, user_id: UUID) -> Optional[UserPlan]:
-        result = db.table(self.TABLE_USER_PLANS).select("*").eq(
-            "user_id", str(user_id)
-        ).order("started_at", desc=True).limit(1).execute()
+        result = db.execute(
+            "SELECT * FROM user_plans WHERE user_id = %s ORDER BY started_at DESC LIMIT 1",
+            (str(user_id),),
+            fetch_one=True
+        )
         
-        if not result.data:
+        if not result:
             return None
         
-        data = result.data[0]
         return UserPlan(
-            id=data["id"],
-            user_id=data["user_id"],
-            plan_type=PlanType(data["plan_type"]),
-            started_at=data["started_at"],
-            expires_at=data.get("expires_at"),
-            created_at=data.get("created_at")
+            id=result["id"],
+            user_id=result["user_id"],
+            plan_type=PlanType(result["plan_type"]),
+            started_at=result["started_at"],
+            expires_at=result.get("expires_at"),
+            created_at=result.get("created_at")
         )
     
     def _map_to_user(self, data: dict) -> User:
@@ -211,4 +216,3 @@ class AdminService:
 
 
 admin_service = AdminService()
-

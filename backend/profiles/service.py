@@ -31,12 +31,16 @@ class ProfileService:
     TABLE_USER_PLANS = "user_plans"
     
     async def get_profile(self, user_id: UUID) -> User:
-        result = db.table(self.TABLE_USERS).select("*").eq("id", str(user_id)).execute()
+        result = db.execute(
+            "SELECT * FROM users WHERE id = %s",
+            (str(user_id),),
+            fetch_one=True
+        )
         
-        if not result.data:
+        if not result:
             raise UserNotFoundError()
         
-        return self._map_to_user(result.data[0])
+        return self._map_to_user(result)
     
     async def update_profile(self, user_id: UUID, request: ProfileUpdateRequest) -> User:
         update_data = request.model_dump(exclude_unset=True)
@@ -44,15 +48,21 @@ class ProfileService:
         if not update_data:
             return await self.get_profile(user_id)
         
-        update_data["updated_at"] = datetime.utcnow().isoformat()
+        # 동적 UPDATE 쿼리 생성
+        update_data["updated_at"] = datetime.utcnow()
+        set_clause = ", ".join([f"{key} = %s" for key in update_data.keys()])
+        values = list(update_data.values()) + [str(user_id)]
         
-        result = db.table(self.TABLE_USERS).update(update_data).eq("id", str(user_id)).execute()
+        result = db.execute_returning(
+            f"UPDATE users SET {set_clause} WHERE id = %s RETURNING *",
+            tuple(values)
+        )
         
-        if not result.data:
+        if not result:
             raise UserNotFoundError()
         
         logger.info(f"Profile updated: user_id={user_id}")
-        return self._map_to_user(result.data[0])
+        return self._map_to_user(result)
     
     async def update_theme(self, user_id: UUID, request: ThemeUpdateRequest) -> User:
         update_data = request.model_dump(exclude_unset=True)
@@ -60,15 +70,21 @@ class ProfileService:
         if not update_data:
             return await self.get_profile(user_id)
         
-        update_data["updated_at"] = datetime.utcnow().isoformat()
+        # 동적 UPDATE 쿼리 생성
+        update_data["updated_at"] = datetime.utcnow()
+        set_clause = ", ".join([f"{key} = %s" for key in update_data.keys()])
+        values = list(update_data.values()) + [str(user_id)]
         
-        result = db.table(self.TABLE_USERS).update(update_data).eq("id", str(user_id)).execute()
+        result = db.execute_returning(
+            f"UPDATE users SET {set_clause} WHERE id = %s RETURNING *",
+            tuple(values)
+        )
         
-        if not result.data:
+        if not result:
             raise UserNotFoundError()
         
         logger.info(f"Theme updated: user_id={user_id}")
-        return self._map_to_user(result.data[0])
+        return self._map_to_user(result)
     
     def get_profile_image_presigned_url(self, user_id: UUID) -> dict:
         result = file_service.create_profile_image_presigned_url(user_id)
@@ -76,21 +92,21 @@ class ProfileService:
         return result
     
     async def confirm_profile_image_upload(self, user_id: UUID, public_url: str) -> User:
-        db.table(self.TABLE_USERS).update({
-            "profile_image_url": public_url,
-            "updated_at": datetime.utcnow().isoformat()
-        }).eq("id", str(user_id)).execute()
+        result = db.execute_returning(
+            "UPDATE users SET profile_image_url = %s, updated_at = %s WHERE id = %s RETURNING *",
+            (public_url, datetime.utcnow(), str(user_id))
+        )
         
         logger.info(f"Profile image URL confirmed: user_id={user_id}")
-        return await self.get_profile(user_id)
+        return self._map_to_user(result)
     
     async def upload_profile_image(self, user_id: UUID, file: UploadFile) -> str:
         url = await file_service.upload_profile_image(user_id, file)
         
-        db.table(self.TABLE_USERS).update({
-            "profile_image_url": url,
-            "updated_at": datetime.utcnow().isoformat()
-        }).eq("id", str(user_id)).execute()
+        db.execute(
+            "UPDATE users SET profile_image_url = %s, updated_at = %s WHERE id = %s",
+            (url, datetime.utcnow(), str(user_id))
+        )
         
         logger.info(f"Profile image uploaded: user_id={user_id}")
         return url
@@ -105,10 +121,10 @@ class ProfileService:
         
         url = await file_service.upload_background_image(user_id, file)
         
-        db.table(self.TABLE_USERS).update({
-            "background_image_url": url,
-            "updated_at": datetime.utcnow().isoformat()
-        }).eq("id", str(user_id)).execute()
+        db.execute(
+            "UPDATE users SET background_image_url = %s, updated_at = %s WHERE id = %s",
+            (url, datetime.utcnow(), str(user_id))
+        )
         
         logger.info(f"Background image uploaded: user_id={user_id}")
         return url
@@ -139,11 +155,13 @@ class ProfileService:
                 # PPOP Auth API 호출 실패 시 로컬 DB 조회로 폴백
         
         # 로컬 DB에서 플랜 조회
-        result = db.table(self.TABLE_USER_PLANS).select("*").eq(
-            "user_id", str(user_id)
-        ).order("started_at", desc=True).limit(1).execute()
+        result = db.execute(
+            "SELECT * FROM user_plans WHERE user_id = %s ORDER BY started_at DESC LIMIT 1",
+            (str(user_id),),
+            fetch_one=True
+        )
         
-        if not result.data:
+        if not result:
             # 플랜이 없으면 BASIC 플랜으로 간주
             return UserPlan(
                 id=user_id,
@@ -152,14 +170,13 @@ class ProfileService:
                 started_at=datetime.utcnow()
             )
         
-        data = result.data[0]
         return UserPlan(
-            id=data["id"],
-            user_id=data["user_id"],
-            plan_type=PlanType(data["plan_type"]),
-            started_at=data["started_at"],
-            expires_at=data.get("expires_at"),
-            created_at=data.get("created_at")
+            id=result["id"],
+            user_id=result["user_id"],
+            plan_type=PlanType(result["plan_type"]),
+            started_at=result["started_at"],
+            expires_at=result.get("expires_at"),
+            created_at=result.get("created_at")
         )
     
     def _map_to_user(self, data: dict) -> User:
@@ -186,4 +203,3 @@ class ProfileService:
 
 
 profile_service = ProfileService()
-

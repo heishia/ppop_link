@@ -16,10 +16,15 @@ class Settings(BaseSettings):
     APP_NAME: str = "PPOPLINK"
     APP_PORT: int = 8005
     
-    # Supabase
-    SUPABASE_URL: str = ""
-    SUPABASE_KEY: str = ""
-    SUPABASE_SERVICE_KEY: str = ""
+    # Database (Railway PostgreSQL)
+    DATABASE_URL: str = ""
+    
+    # Storage (Railway Buckets - S3 compatible)
+    S3_ENDPOINT_URL: str = ""
+    S3_ACCESS_KEY_ID: str = ""
+    S3_SECRET_ACCESS_KEY: str = ""
+    S3_BUCKET_NAME: str = "ppoplink"
+    S3_REGION: str = "auto"
     
     # PPOP Auth (SSO)
     PPOP_AUTH_API_URL: str = ""  # https://auth-api.yourdomain.com
@@ -132,18 +137,18 @@ def get_settings() -> Settings:
         missing_vars = []
         invalid_vars = []
         
-        if not settings.SUPABASE_URL:
-            missing_vars.append("SUPABASE_URL")
-        elif settings.SUPABASE_URL == "https://xxxx.supabase.co":
-            invalid_vars.append("SUPABASE_URL (placeholder value detected)")
+        # Database 검증
+        if not settings.DATABASE_URL:
+            missing_vars.append("DATABASE_URL")
         
-        if not settings.SUPABASE_KEY:
-            missing_vars.append("SUPABASE_KEY")
-        
-        # 프로덕션 환경에서는 더 엄격한 검증
+        # 프로덕션 환경에서는 Storage 설정도 검증
         if settings.APP_ENV == "prod":
-            if not settings.SUPABASE_SERVICE_KEY:
-                missing_vars.append("SUPABASE_SERVICE_KEY (recommended for production)")
+            if not settings.S3_ENDPOINT_URL:
+                missing_vars.append("S3_ENDPOINT_URL")
+            if not settings.S3_ACCESS_KEY_ID:
+                missing_vars.append("S3_ACCESS_KEY_ID")
+            if not settings.S3_SECRET_ACCESS_KEY:
+                missing_vars.append("S3_SECRET_ACCESS_KEY")
         
         if missing_vars or invalid_vars:
             import sys
@@ -154,12 +159,12 @@ def get_settings() -> Settings:
             if missing_vars:
                 print("\nMissing required environment variables:")
                 for var in missing_vars:
-                    print(f"  ❌ {var}")
+                    print(f"  - {var}")
             
             if invalid_vars:
                 print("\nInvalid environment variable values:")
                 for var in invalid_vars:
-                    print(f"  ⚠️  {var}")
+                    print(f"  - {var}")
             
             print("\n" + "=" * 60)
             print("Configuration Guide:")
@@ -172,9 +177,10 @@ def get_settings() -> Settings:
             print("   - Create/update .env.local file")
             print("   - Add the required variables")
             print("\nExample values:")
-            print("  SUPABASE_URL=https://your-project.supabase.co")
-            print("  SUPABASE_KEY=your-anon-key")
-            print("  SUPABASE_SERVICE_KEY=your-service-role-key")
+            print("  DATABASE_URL=postgresql://user:pass@host:5432/railway")
+            print("  S3_ENDPOINT_URL=https://your-bucket.storage.railway.app")
+            print("  S3_ACCESS_KEY_ID=your-access-key")
+            print("  S3_SECRET_ACCESS_KEY=your-secret-key")
             print("=" * 60)
             sys.exit(1)
         
@@ -188,8 +194,7 @@ def get_settings() -> Settings:
         print(f"Error: {e}")
         print()
         print("Required environment variables:")
-        print("  - SUPABASE_URL")
-        print("  - SUPABASE_KEY")
+        print("  - DATABASE_URL")
         print("  - PPOP_AUTH_API_URL")
         print("  - PPOP_AUTH_CLIENT_URL")
         print("  - PPOP_AUTH_CLIENT_ID")
@@ -197,10 +202,14 @@ def get_settings() -> Settings:
         print("  - PPOP_AUTH_REDIRECT_URI")
         print("  - PPOP_AUTH_JWKS_URI")
         print()
+        print("For production, also required:")
+        print("  - S3_ENDPOINT_URL")
+        print("  - S3_ACCESS_KEY_ID")
+        print("  - S3_SECRET_ACCESS_KEY")
+        print()
         print("Please create a .env.local file in the project root with these variables.")
         print("Example:")
-        print("  SUPABASE_URL=https://your-project.supabase.co")
-        print("  SUPABASE_KEY=your-anon-key")
+        print("  DATABASE_URL=postgresql://user:pass@host:5432/railway")
         print("  PPOP_AUTH_API_URL=https://auth-api.yourdomain.com")
         print("  PPOP_AUTH_CLIENT_ID=your-client-id")
         print("=" * 60)

@@ -29,14 +29,15 @@ class PublicService:
             link_id: 암호화된 공개 링크 ID
         """
         # public_link_id로 사용자 조회
-        user_result = db.table(self.TABLE_USERS).select("*").eq(
-            "public_link_id", link_id
-        ).eq("is_active", True).execute()
+        user_data = db.execute(
+            "SELECT * FROM users WHERE public_link_id = %s AND is_active = %s",
+            (link_id, True),
+            fetch_one=True
+        )
         
-        if not user_result.data:
+        if not user_data:
             raise UserNotFoundError(detail="Profile not found")
         
-        user_data = user_result.data[0]
         user_id = user_data["id"]  # PPOP Auth user_id와 동일
         
         # 활성화된 링크 조회
@@ -88,11 +89,13 @@ class PublicService:
             ip_address: 클라이언트 IP 주소
         """
         # 사용자 확인 (public_link_id로 조회)
-        user_result = db.table(self.TABLE_USERS).select("id").eq(
-            "public_link_id", public_link_id
-        ).execute()
+        user_result = db.execute(
+            "SELECT id FROM users WHERE public_link_id = %s",
+            (public_link_id,),
+            fetch_one=True
+        )
         
-        if not user_result.data:
+        if not user_result:
             raise UserNotFoundError(detail="Profile not found")
         
         # 클릭 수 증가 (links 테이블)
@@ -104,18 +107,18 @@ class PublicService:
         logger.info(f"Click recorded: public_link_id={public_link_id}, link_id={link_id}")
     
     async def _get_active_links(self, user_id: str) -> List[Link]:
-        result = db.table(self.TABLE_LINKS).select("*").eq(
-            "user_id", user_id
-        ).eq("is_active", True).order("display_order").execute()
-        
-        return [self._map_to_link(data) for data in result.data]
+        rows = db.execute(
+            "SELECT * FROM links WHERE user_id = %s AND is_active = %s ORDER BY display_order",
+            (user_id, True)
+        )
+        return [self._map_to_link(data) for data in rows]
     
     async def _get_active_social_links(self, user_id: str) -> List[SocialLink]:
-        result = db.table(self.TABLE_SOCIAL_LINKS).select("*").eq(
-            "user_id", user_id
-        ).eq("is_active", True).order("display_order").execute()
-        
-        return [self._map_to_social_link(data) for data in result.data]
+        rows = db.execute(
+            "SELECT * FROM social_links WHERE user_id = %s AND is_active = %s ORDER BY display_order",
+            (user_id, True)
+        )
+        return [self._map_to_social_link(data) for data in rows]
     
     def _map_to_link(self, data: dict) -> Link:
         return Link(
@@ -145,4 +148,3 @@ class PublicService:
 
 
 public_service = PublicService()
-

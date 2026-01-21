@@ -191,7 +191,7 @@ class AuthService:
         Returns:
             User: 생성된 사용자
         """
-        now = datetime.utcnow().isoformat()
+        now = datetime.utcnow()
         
         # username 생성 (이메일 앞부분 또는 랜덤)
         if email:
@@ -200,42 +200,40 @@ class AuthService:
         else:
             username = await self._generate_unique_username(f"user_{str(ppop_user_id)[:8]}")
         
-        user_data = {
-            "id": str(ppop_user_id),
-            "username": username,
-            "email": email or f"{ppop_user_id}@ppop.auth",
-            "phone_number": phone_number,
-            "display_name": username,
-            "theme": "default",
-            "is_active": True,
-            "created_at": now,
-        }
+        result = db.execute_returning(
+            """
+            INSERT INTO users (id, username, email, phone_number, display_name, theme, is_active, created_at)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+            RETURNING *
+            """,
+            (str(ppop_user_id), username, email or f"{ppop_user_id}@ppop.auth",
+             phone_number, username, "default", True, now)
+        )
         
-        result = db.table(self.TABLE_USERS).insert(user_data).execute()
-        
-        if not result.data:
+        if not result:
             raise DatabaseError(detail="Failed to create user")
         
         # public_link_id 생성
-        user_seq = result.data[0].get("user_seq")
+        user_seq = result.get("user_seq")
         if user_seq:
             public_link_id = encode_user_seq(user_seq)
-            db.table(self.TABLE_USERS).update(
-                {"public_link_id": public_link_id}
-            ).eq("id", str(ppop_user_id)).execute()
-            result.data[0]["public_link_id"] = public_link_id
+            db.execute(
+                "UPDATE users SET public_link_id = %s WHERE id = %s",
+                (public_link_id, str(ppop_user_id))
+            )
+            result["public_link_id"] = public_link_id
         
         # BASIC 플랜 생성 (로컬 DB에 저장, 실제 구독은 PPOP Auth에서 관리)
         from uuid import uuid4
-        plan_data = {
-            "id": str(uuid4()),
-            "user_id": str(ppop_user_id),
-            "plan_type": PlanType.BASIC.value,
-            "started_at": now,
-        }
-        db.table(self.TABLE_USER_PLANS).insert(plan_data).execute()
+        db.execute(
+            """
+            INSERT INTO user_plans (id, user_id, plan_type, started_at)
+            VALUES (%s, %s, %s, %s)
+            """,
+            (str(uuid4()), str(ppop_user_id), PlanType.BASIC.value, now)
+        )
         
-        user = self._map_to_user(result.data[0])
+        user = self._map_to_user(result)
         
         # PPOP Auth에서 BASIC 플랜 활성화
         if email:
@@ -247,9 +245,6 @@ class AuthService:
                 # 구독 활성화 실패해도 사용자는 생성됨 (경고만 로그)
                 # 나중에 첫 API 호출 시 구독 상태 확인하고 재시도 가능
                 logger.warning(f"User {ppop_user_id} created without BASIC subscription activation")
-                # TODO: 백그라운드 작업으로 구독 활성화 재시도
-                # from backend.tasks import retry_subscription_activation
-                # retry_subscription_activation.delay(user_id=str(ppop_user_id), email=email)
         
         logger.info(f"User created from PPOP Auth: {user.username}, public_link_id: {user.public_link_id}")
         return user
@@ -268,8 +263,12 @@ class AuthService:
         username = clean_username
         counter = 1
         while True:
-            result = db.table(self.TABLE_USERS).select("id").eq("username", username).execute()
-            if not result.data:
+            result = db.execute(
+                "SELECT id FROM users WHERE username = %s",
+                (username,),
+                fetch_one=True
+            )
+            if not result:
                 return username
             username = f"{clean_username}_{counter}"
             counter += 1
@@ -281,12 +280,16 @@ class AuthService:
     
     async def get_user_by_id(self, user_id: UUID) -> Optional[User]:
         """user_id로 사용자 조회"""
-        result = db.table(self.TABLE_USERS).select("*").eq("id", str(user_id)).execute()
+        result = db.execute(
+            "SELECT * FROM users WHERE id = %s",
+            (str(user_id),),
+            fetch_one=True
+        )
         
-        if not result.data:
+        if not result:
             return None
         
-        return self._map_to_user(result.data[0])
+        return self._map_to_user(result)
     
     async def get_subscription_status(self, access_token: str) -> SubscriptionStatusResponse:
         """
@@ -447,9 +450,6 @@ class AuthService:
             return False
         
         # 관리자 API로 구독 상태 확인
-        # PPOP Auth 관리자 API 구조에 따라 엔드포인트가 다를 수 있음
-        # 예시: /api/admin/users/{user_id}/subscriptions/{service_code}
-        # 또는: /api/admin/subscriptions/{service_code}?userId={user_id}
         subscription_url = f"{settings.PPOP_AUTH_API_URL}/api/admin/users/{user_id}/subscriptions/{settings.PPOP_AUTH_SERVICE_CODE}"
         
         try:

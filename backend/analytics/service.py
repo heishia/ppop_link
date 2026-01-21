@@ -26,11 +26,10 @@ class AnalyticsService:
     async def get_analytics_summary(self, user_id: UUID) -> AnalyticsSummary:
         """Get complete analytics summary for user"""
         # 사용자의 모든 링크 조회
-        links_result = db.table(self.TABLE_LINKS).select("*").eq(
-            "user_id", str(user_id)
-        ).order("display_order").execute()
-        
-        links = links_result.data or []
+        links = db.execute(
+            "SELECT * FROM links WHERE user_id = %s ORDER BY display_order",
+            (str(user_id),)
+        )
         
         # 날짜 범위 계산
         now = datetime.utcnow()
@@ -108,14 +107,25 @@ class AnalyticsService:
         daily_map = defaultdict(int)
         
         try:
-            result = db.table(self.TABLE_CLICK_EVENTS).select("*").in_(
-                "link_id", link_ids
-            ).gte("clicked_at", start_date.isoformat()).execute()
+            # PostgreSQL에서 IN 절을 위한 플레이스홀더 생성
+            placeholders = ','.join(['%s'] * len(link_ids))
+            params = tuple(link_ids) + (start_date,)
             
-            for event in result.data or []:
-                clicked_at = event.get("clicked_at", "")
+            rows = db.execute(
+                f"""
+                SELECT * FROM click_events 
+                WHERE link_id IN ({placeholders}) AND clicked_at >= %s
+                """,
+                params
+            )
+            
+            for event in rows or []:
+                clicked_at = event.get("clicked_at")
                 if clicked_at:
-                    date_str = clicked_at[:10]  # YYYY-MM-DD
+                    if isinstance(clicked_at, str):
+                        date_str = clicked_at[:10]  # YYYY-MM-DD
+                    else:
+                        date_str = clicked_at.strftime("%Y-%m-%d")
                     daily_map[date_str] += 1
         except Exception as e:
             # click_events 테이블이 없을 경우 빈 데이터 반환
@@ -133,12 +143,18 @@ class AnalyticsService:
             return 0
         
         try:
-            result = db.table(self.TABLE_CLICK_EVENTS).select(
-                "*", count="exact"
-            ).in_("link_id", link_ids).gte(
-                "clicked_at", start_date.isoformat()
-            ).execute()
-            return result.count or 0
+            placeholders = ','.join(['%s'] * len(link_ids))
+            params = tuple(link_ids) + (start_date,)
+            
+            result = db.execute(
+                f"""
+                SELECT COUNT(*) as count FROM click_events 
+                WHERE link_id IN ({placeholders}) AND clicked_at >= %s
+                """,
+                params,
+                fetch_one=True
+            )
+            return result["count"] if result else 0
         except Exception:
             # click_events 테이블이 없을 경우 0 반환
             return 0
@@ -150,12 +166,12 @@ class AnalyticsService:
     ) -> int:
         """Get clicks for a specific link in a period"""
         try:
-            result = db.table(self.TABLE_CLICK_EVENTS).select(
-                "*", count="exact"
-            ).eq("link_id", link_id).gte(
-                "clicked_at", start_date.isoformat()
-            ).execute()
-            return result.count or 0
+            result = db.execute(
+                "SELECT COUNT(*) as count FROM click_events WHERE link_id = %s AND clicked_at >= %s",
+                (link_id, start_date),
+                fetch_one=True
+            )
+            return result["count"] if result else 0
         except Exception:
             # click_events 테이블이 없을 경우 0 반환
             return 0
@@ -163,13 +179,13 @@ class AnalyticsService:
     async def record_click_event(self, link_id: UUID, user_agent: str = None, ip_address: str = None) -> None:
         """Record a click event with details"""
         try:
-            event_data = {
-                "link_id": str(link_id),
-                "clicked_at": datetime.utcnow().isoformat(),
-                "user_agent": user_agent,
-                "ip_address": ip_address
-            }
-            db.table(self.TABLE_CLICK_EVENTS).insert(event_data).execute()
+            db.execute(
+                """
+                INSERT INTO click_events (link_id, clicked_at, user_agent, ip_address)
+                VALUES (%s, %s, %s, %s)
+                """,
+                (str(link_id), datetime.utcnow(), user_agent, ip_address)
+            )
             logger.info(f"Click event recorded: link_id={link_id}")
         except Exception as e:
             # click_events 테이블이 없어도 기존 click_count는 증가됨
@@ -177,4 +193,3 @@ class AnalyticsService:
 
 
 analytics_service = AnalyticsService()
-

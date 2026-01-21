@@ -1,15 +1,17 @@
 """
-파일 업로드 서비스 (Supabase Storage)
+파일 업로드 서비스 (Railway Buckets - S3 호환)
 """
 
 from typing import Optional
 from uuid import UUID, uuid4
 import mimetypes
 
+import boto3
+from botocore.config import Config
+from botocore.exceptions import ClientError
 from fastapi import UploadFile
 
 from backend.core.config import settings
-from backend.core.database import db
 from backend.core.exceptions import (
     FileUploadError,
     FileSizeExceededError,
@@ -22,7 +24,45 @@ logger = get_logger(__name__)
 ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp"]
 
 
+def get_s3_client():
+    """S3 클라이언트 생성 (Railway Buckets용)"""
+    if not settings.S3_ENDPOINT_URL:
+        raise ValueError("S3_ENDPOINT_URL is not configured")
+    
+    return boto3.client(
+        's3',
+        endpoint_url=settings.S3_ENDPOINT_URL,
+        aws_access_key_id=settings.S3_ACCESS_KEY_ID,
+        aws_secret_access_key=settings.S3_SECRET_ACCESS_KEY,
+        region_name=settings.S3_REGION,
+        config=Config(signature_version='s3v4')
+    )
+
+
 class FileService:
+    def __init__(self):
+        self._s3_client = None
+    
+    @property
+    def s3(self):
+        """Lazy loading S3 client"""
+        if self._s3_client is None:
+            self._s3_client = get_s3_client()
+        return self._s3_client
+    
+    def _get_bucket_name(self, bucket_type: str) -> str:
+        """버킷 이름 반환 (Railway Buckets는 단일 버킷 사용)"""
+        # Railway Buckets는 보통 단일 버킷을 사용하고, prefix로 구분
+        return settings.S3_BUCKET_NAME
+    
+    def _get_public_url(self, file_path: str) -> str:
+        """파일의 공개 URL 생성"""
+        # Railway Buckets URL 형식
+        # https://bucket-name.storage.railway.app/file_path
+        endpoint = settings.S3_ENDPOINT_URL.rstrip('/')
+        bucket = settings.S3_BUCKET_NAME
+        return f"{endpoint}/{bucket}/{file_path}"
+    
     def create_presigned_upload_url(
         self,
         bucket: str,
@@ -30,21 +70,37 @@ class FileService:
         prefix: str,
         extension: str = ".jpg"
     ) -> dict:
+        """Presigned URL 생성 (업로드용)"""
         file_name = f"{prefix}_{user_id}_{uuid4().hex[:8]}{extension}"
-        file_path = f"{user_id}/{file_name}"
+        file_path = f"{bucket}/{user_id}/{file_name}"
         
         try:
-            result = db.storage.from_(bucket).create_signed_upload_url(path=file_path)
-            public_url = db.storage.from_(bucket).get_public_url(file_path)
+            bucket_name = self._get_bucket_name(bucket)
+            
+            # Presigned URL 생성 (PUT용)
+            presigned_url = self.s3.generate_presigned_url(
+                'put_object',
+                Params={
+                    'Bucket': bucket_name,
+                    'Key': file_path,
+                    'ContentType': 'image/jpeg'
+                },
+                ExpiresIn=3600  # 1시간
+            )
+            
+            public_url = self._get_public_url(file_path)
             
             logger.info(f"Presigned URL created: {file_path}")
             return {
-                "signed_url": result.get("signedUrl") or result.get("signed_url"),
-                "token": result.get("token"),
-                "path": result.get("path") or file_path,
+                "signed_url": presigned_url,
+                "token": None,
+                "path": file_path,
                 "file_path": file_path,
                 "public_url": public_url
             }
+        except ClientError as e:
+            logger.error(f"Failed to create presigned URL: {e}")
+            raise FileUploadError(detail=str(e))
         except Exception as e:
             logger.error(f"Failed to create presigned URL: {e}")
             raise FileUploadError(detail=str(e))
@@ -100,22 +156,27 @@ class FileService:
         
         extension = self._get_file_extension(file.filename)
         file_name = f"content_{uuid4().hex}{extension}"
-        file_path = f"content/{user_id}/{file_name}"
+        file_path = f"{settings.STORAGE_BUCKET_CONTENT_IMAGES}/content/{user_id}/{file_name}"
         
         try:
             content = await file.read()
+            bucket_name = self._get_bucket_name(settings.STORAGE_BUCKET_CONTENT_IMAGES)
             
-            db.storage.from_(settings.STORAGE_BUCKET_CONTENT_IMAGES).upload(
-                path=file_path,
-                file=content,
-                file_options={"content-type": file.content_type}
+            self.s3.put_object(
+                Bucket=bucket_name,
+                Key=file_path,
+                Body=content,
+                ContentType=file.content_type or 'image/jpeg'
             )
             
-            public_url = db.storage.from_(settings.STORAGE_BUCKET_CONTENT_IMAGES).get_public_url(file_path)
+            public_url = self._get_public_url(file_path)
             
             logger.info(f"Content image uploaded: {file_path}")
             return public_url, file_path
             
+        except ClientError as e:
+            logger.error(f"Content image upload failed: {e}")
+            raise FileUploadError(detail=str(e))
         except Exception as e:
             logger.error(f"Content image upload failed: {e}")
             raise FileUploadError(detail=str(e))
@@ -132,31 +193,41 @@ class FileService:
         
         extension = self._get_file_extension(file.filename)
         file_name = f"{prefix}_{user_id}_{uuid4().hex[:8]}{extension}"
-        file_path = f"{user_id}/{file_name}"
+        file_path = f"{bucket}/{user_id}/{file_name}"
         
         try:
             content = await file.read()
+            bucket_name = self._get_bucket_name(bucket)
             
-            db.storage.from_(bucket).upload(
-                path=file_path,
-                file=content,
-                file_options={"content-type": file.content_type}
+            self.s3.put_object(
+                Bucket=bucket_name,
+                Key=file_path,
+                Body=content,
+                ContentType=file.content_type or 'image/jpeg'
             )
             
-            public_url = db.storage.from_(bucket).get_public_url(file_path)
+            public_url = self._get_public_url(file_path)
             
             logger.info(f"File uploaded: {file_path}")
             return public_url
             
+        except ClientError as e:
+            logger.error(f"File upload failed: {e}")
+            raise FileUploadError(detail=str(e))
         except Exception as e:
             logger.error(f"File upload failed: {e}")
             raise FileUploadError(detail=str(e))
     
     async def delete_file(self, bucket: str, file_path: str) -> bool:
+        """파일 삭제"""
         try:
-            db.storage.from_(bucket).remove([file_path])
+            bucket_name = self._get_bucket_name(bucket)
+            self.s3.delete_object(Bucket=bucket_name, Key=file_path)
             logger.info(f"File deleted: {file_path}")
             return True
+        except ClientError as e:
+            logger.error(f"File delete failed: {e}")
+            return False
         except Exception as e:
             logger.error(f"File delete failed: {e}")
             return False
@@ -192,4 +263,3 @@ class FileService:
 
 
 file_service = FileService()
-

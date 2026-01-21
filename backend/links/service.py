@@ -37,11 +37,11 @@ class LinkService:
     
     # Link CRUD
     async def get_links(self, user_id: UUID) -> List[Link]:
-        result = db.table(self.TABLE_LINKS).select("*").eq(
-            "user_id", str(user_id)
-        ).order("display_order").execute()
-        
-        return [self._map_to_link(data) for data in result.data]
+        rows = db.execute(
+            "SELECT * FROM links WHERE user_id = %s ORDER BY display_order",
+            (str(user_id),)
+        )
+        return [self._map_to_link(row) for row in rows]
     
     async def create_link(self, user_id: UUID, request: LinkCreateRequest, access_token: Optional[str] = None) -> Link:
         await self._check_link_limit(user_id, access_token)
@@ -50,24 +50,20 @@ class LinkService:
         max_order = await self._get_max_display_order(user_id, self.TABLE_LINKS)
         
         link_id = uuid4()
-        now = datetime.utcnow().isoformat()
+        now = datetime.utcnow()
         
-        link_data = {
-            "id": str(link_id),
-            "user_id": str(user_id),
-            "title": request.title,
-            "url": request.url,
-            "thumbnail_url": request.thumbnail_url,
-            "display_order": max_order + 1,
-            "is_active": True,
-            "click_count": 0,
-            "created_at": now,
-        }
-        
-        result = db.table(self.TABLE_LINKS).insert(link_data).execute()
+        result = db.execute_returning(
+            """
+            INSERT INTO links (id, user_id, title, url, thumbnail_url, display_order, is_active, click_count, created_at)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+            RETURNING *
+            """,
+            (str(link_id), str(user_id), request.title, request.url, request.thumbnail_url,
+             max_order + 1, True, 0, now)
+        )
         
         logger.info(f"Link created: user_id={user_id}, link_id={link_id}")
-        return self._map_to_link(result.data[0])
+        return self._map_to_link(result)
     
     async def update_link(
         self,
@@ -84,60 +80,60 @@ class LinkService:
             link = await self._get_link_by_id(link_id)
             return link
         
-        update_data["updated_at"] = datetime.utcnow().isoformat()
+        # 동적 UPDATE 쿼리 생성
+        update_data["updated_at"] = datetime.utcnow()
+        set_clause = ", ".join([f"{key} = %s" for key in update_data.keys()])
+        values = list(update_data.values()) + [str(link_id)]
         
         # 업데이트 전 현재 값 확인
         before = await self._get_link_by_id(link_id)
         logger.info(f"Before update - is_active: {before.is_active}")
         
         # 업데이트 실행
-        db.table(self.TABLE_LINKS).update(update_data).eq(
-            "id", str(link_id)
-        ).execute()
+        result = db.execute_returning(
+            f"UPDATE links SET {set_clause} WHERE id = %s RETURNING *",
+            tuple(values)
+        )
         
         logger.info(f"Link updated: link_id={link_id}")
-        
-        # 업데이트된 데이터 조회 후 반환
-        after = await self._get_link_by_id(link_id)
-        logger.info(f"After update - is_active: {after.is_active}")
-        return after
+        logger.info(f"After update - is_active: {result.get('is_active')}")
+        return self._map_to_link(result)
     
     async def delete_link(self, user_id: UUID, link_id: UUID) -> None:
         await self._verify_link_ownership(user_id, link_id)
         
-        db.table(self.TABLE_LINKS).delete().eq("id", str(link_id)).execute()
+        db.execute(
+            "DELETE FROM links WHERE id = %s",
+            (str(link_id),)
+        )
         
         logger.info(f"Link deleted: link_id={link_id}")
     
     async def reorder_links(self, user_id: UUID, link_ids: List[UUID]) -> List[Link]:
+        now = datetime.utcnow()
         for order, link_id in enumerate(link_ids):
-            db.table(self.TABLE_LINKS).update({
-                "display_order": order,
-                "updated_at": datetime.utcnow().isoformat()
-            }).eq("id", str(link_id)).eq("user_id", str(user_id)).execute()
+            db.execute(
+                "UPDATE links SET display_order = %s, updated_at = %s WHERE id = %s AND user_id = %s",
+                (order, now, str(link_id), str(user_id))
+            )
         
         logger.info(f"Links reordered: user_id={user_id}")
         return await self.get_links(user_id)
     
     async def increment_click_count(self, link_id: UUID) -> None:
-        # Supabase에서는 RPC를 사용하거나 현재 값을 읽어서 증가
-        result = db.table(self.TABLE_LINKS).select("click_count").eq(
-            "id", str(link_id)
-        ).execute()
-        
-        if result.data:
-            current_count = result.data[0]["click_count"] or 0
-            db.table(self.TABLE_LINKS).update({
-                "click_count": current_count + 1
-            }).eq("id", str(link_id)).execute()
+        # PostgreSQL에서는 직접 증가 가능
+        db.execute(
+            "UPDATE links SET click_count = click_count + 1 WHERE id = %s",
+            (str(link_id),)
+        )
     
     # Social Link CRUD
     async def get_social_links(self, user_id: UUID) -> List[SocialLink]:
-        result = db.table(self.TABLE_SOCIAL_LINKS).select("*").eq(
-            "user_id", str(user_id)
-        ).order("display_order").execute()
-        
-        return [self._map_to_social_link(data) for data in result.data]
+        rows = db.execute(
+            "SELECT * FROM social_links WHERE user_id = %s ORDER BY display_order",
+            (str(user_id),)
+        )
+        return [self._map_to_social_link(row) for row in rows]
     
     async def create_social_link(
         self,
@@ -150,22 +146,20 @@ class LinkService:
         max_order = await self._get_max_display_order(user_id, self.TABLE_SOCIAL_LINKS)
         
         social_link_id = uuid4()
-        now = datetime.utcnow().isoformat()
+        now = datetime.utcnow()
         
-        social_link_data = {
-            "id": str(social_link_id),
-            "user_id": str(user_id),
-            "platform": request.platform.value,
-            "url": request.url,
-            "display_order": max_order + 1,
-            "is_active": True,
-            "created_at": now,
-        }
-        
-        result = db.table(self.TABLE_SOCIAL_LINKS).insert(social_link_data).execute()
+        result = db.execute_returning(
+            """
+            INSERT INTO social_links (id, user_id, platform, url, display_order, is_active, created_at)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
+            RETURNING *
+            """,
+            (str(social_link_id), str(user_id), request.platform.value, request.url,
+             max_order + 1, True, now)
+        )
         
         logger.info(f"Social link created: user_id={user_id}, platform={request.platform}")
-        return self._map_to_social_link(result.data[0])
+        return self._map_to_social_link(result)
     
     async def update_social_link(
         self,
@@ -180,57 +174,65 @@ class LinkService:
             social_link = await self._get_social_link_by_id(social_link_id)
             return social_link
         
-        update_data["updated_at"] = datetime.utcnow().isoformat()
+        # 동적 UPDATE 쿼리 생성
+        update_data["updated_at"] = datetime.utcnow()
+        set_clause = ", ".join([f"{key} = %s" for key in update_data.keys()])
+        values = list(update_data.values()) + [str(social_link_id)]
         
-        # 업데이트 실행
-        db.table(self.TABLE_SOCIAL_LINKS).update(update_data).eq(
-            "id", str(social_link_id)
-        ).execute()
+        result = db.execute_returning(
+            f"UPDATE social_links SET {set_clause} WHERE id = %s RETURNING *",
+            tuple(values)
+        )
         
         logger.info(f"Social link updated: social_link_id={social_link_id}")
-        
-        # 업데이트된 데이터 조회 후 반환
-        return await self._get_social_link_by_id(social_link_id)
+        return self._map_to_social_link(result)
     
     async def delete_social_link(self, user_id: UUID, social_link_id: UUID) -> None:
         await self._verify_social_link_ownership(user_id, social_link_id)
         
-        db.table(self.TABLE_SOCIAL_LINKS).delete().eq(
-            "id", str(social_link_id)
-        ).execute()
+        db.execute(
+            "DELETE FROM social_links WHERE id = %s",
+            (str(social_link_id),)
+        )
         
         logger.info(f"Social link deleted: social_link_id={social_link_id}")
     
     # Helper methods
     async def _get_link_by_id(self, link_id: UUID) -> Link:
-        result = db.table(self.TABLE_LINKS).select("*").eq(
-            "id", str(link_id)
-        ).execute()
+        result = db.execute(
+            "SELECT * FROM links WHERE id = %s",
+            (str(link_id),),
+            fetch_one=True
+        )
         
-        if not result.data:
+        if not result:
             raise LinkNotFoundError()
         
-        return self._map_to_link(result.data[0])
+        return self._map_to_link(result)
     
     async def _get_social_link_by_id(self, social_link_id: UUID) -> SocialLink:
-        result = db.table(self.TABLE_SOCIAL_LINKS).select("*").eq(
-            "id", str(social_link_id)
-        ).execute()
+        result = db.execute(
+            "SELECT * FROM social_links WHERE id = %s",
+            (str(social_link_id),),
+            fetch_one=True
+        )
         
-        if not result.data:
+        if not result:
             raise LinkNotFoundError(detail="Social link not found")
         
-        return self._map_to_social_link(result.data[0])
+        return self._map_to_social_link(result)
     
     async def _verify_link_ownership(self, user_id: UUID, link_id: UUID) -> None:
-        result = db.table(self.TABLE_LINKS).select("user_id").eq(
-            "id", str(link_id)
-        ).execute()
+        result = db.execute(
+            "SELECT user_id FROM links WHERE id = %s",
+            (str(link_id),),
+            fetch_one=True
+        )
         
-        if not result.data:
+        if not result:
             raise LinkNotFoundError()
         
-        if result.data[0]["user_id"] != str(user_id):
+        if result["user_id"] != str(user_id):
             raise AuthorizationError(detail="Not your link")
     
     async def _verify_social_link_ownership(
@@ -238,23 +240,27 @@ class LinkService:
         user_id: UUID,
         social_link_id: UUID
     ) -> None:
-        result = db.table(self.TABLE_SOCIAL_LINKS).select("user_id").eq(
-            "id", str(social_link_id)
-        ).execute()
+        result = db.execute(
+            "SELECT user_id FROM social_links WHERE id = %s",
+            (str(social_link_id),),
+            fetch_one=True
+        )
         
-        if not result.data:
+        if not result:
             raise LinkNotFoundError(detail="Social link not found")
         
-        if result.data[0]["user_id"] != str(user_id):
+        if result["user_id"] != str(user_id):
             raise AuthorizationError(detail="Not your social link")
     
     async def _get_max_display_order(self, user_id: UUID, table: str) -> int:
-        result = db.table(table).select("display_order").eq(
-            "user_id", str(user_id)
-        ).order("display_order", desc=True).limit(1).execute()
+        result = db.execute(
+            f"SELECT display_order FROM {table} WHERE user_id = %s ORDER BY display_order DESC LIMIT 1",
+            (str(user_id),),
+            fetch_one=True
+        )
         
-        if result.data:
-            return result.data[0]["display_order"]
+        if result:
+            return result["display_order"]
         return -1
     
     async def _get_user_plan(self, user_id: UUID, access_token: Optional[str] = None) -> UserPlan:
@@ -283,11 +289,13 @@ class LinkService:
                 # PPOP Auth API 호출 실패 시 로컬 DB 조회로 폴백
         
         # 로컬 DB에서 플랜 조회
-        result = db.table(self.TABLE_USER_PLANS).select("*").eq(
-            "user_id", str(user_id)
-        ).order("started_at", desc=True).limit(1).execute()
+        result = db.execute(
+            "SELECT * FROM user_plans WHERE user_id = %s ORDER BY started_at DESC LIMIT 1",
+            (str(user_id),),
+            fetch_one=True
+        )
         
-        if not result.data:
+        if not result:
             return UserPlan(
                 id=user_id,
                 user_id=user_id,
@@ -295,14 +303,13 @@ class LinkService:
                 started_at=datetime.utcnow()
             )
         
-        data = result.data[0]
         return UserPlan(
-            id=data["id"],
-            user_id=data["user_id"],
-            plan_type=PlanType(data["plan_type"]),
-            started_at=data["started_at"],
-            expires_at=data.get("expires_at"),
-            created_at=data.get("created_at")
+            id=result["id"],
+            user_id=result["user_id"],
+            plan_type=PlanType(result["plan_type"]),
+            started_at=result["started_at"],
+            expires_at=result.get("expires_at"),
+            created_at=result.get("created_at")
         )
     
     async def _check_link_limit(self, user_id: UUID, access_token: Optional[str] = None) -> None:
@@ -311,11 +318,8 @@ class LinkService:
         if plan.plan_type == PlanType.PRO:
             return
         
-        result = db.table(self.TABLE_LINKS).select("id", count="exact").eq(
-            "user_id", str(user_id)
-        ).execute()
+        current_count = db.count("links", "user_id = %s", (str(user_id),))
         
-        current_count = result.count or 0
         if current_count >= settings.FREE_MAX_LINKS:
             raise LinkLimitExceededError(
                 detail=f"Basic plan allows up to {settings.FREE_MAX_LINKS} links"
@@ -327,11 +331,8 @@ class LinkService:
         if plan.plan_type == PlanType.PRO:
             return
         
-        result = db.table(self.TABLE_SOCIAL_LINKS).select("id", count="exact").eq(
-            "user_id", str(user_id)
-        ).execute()
+        current_count = db.count("social_links", "user_id = %s", (str(user_id),))
         
-        current_count = result.count or 0
         if current_count >= settings.FREE_MAX_SOCIAL_LINKS:
             raise SocialLinkLimitExceededError(
                 detail=f"Basic plan allows up to {settings.FREE_MAX_SOCIAL_LINKS} social links"
@@ -365,4 +366,3 @@ class LinkService:
 
 
 link_service = LinkService()
-

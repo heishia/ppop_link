@@ -29,17 +29,26 @@ class ContentService:
             published_only: 발행된 컨텐츠만 조회 (기본값: True)
             category: 카테고리 필터 (선택사항)
         """
-        query = db.table(self.TABLE_CONTENT).select("*")
+        # 동적 쿼리 생성
+        conditions = []
+        params = []
         
         if published_only:
-            query = query.eq("is_published", True)
+            conditions.append("is_published = %s")
+            params.append(True)
         
         if category:
-            query = query.eq("category", category)
+            conditions.append("category = %s")
+            params.append(category)
         
-        result = query.order("published_at", desc=True).execute()
+        query = "SELECT * FROM content"
+        if conditions:
+            query += " WHERE " + " AND ".join(conditions)
+        query += " ORDER BY published_at DESC"
         
-        return [self._map_to_content(item) for item in result.data]
+        rows = db.execute(query, tuple(params) if params else None)
+        
+        return [self._map_to_content(item) for item in rows]
     
     async def get_content_by_slug(self, slug: str, published_only: bool = True) -> Content:
         """
@@ -49,17 +58,23 @@ class ContentService:
             slug: 컨텐츠 slug
             published_only: 발행된 컨텐츠만 조회 (기본값: True)
         """
-        query = db.table(self.TABLE_CONTENT).select("*").eq("slug", slug)
-        
         if published_only:
-            query = query.eq("is_published", True)
+            result = db.execute(
+                "SELECT * FROM content WHERE slug = %s AND is_published = %s",
+                (slug, True),
+                fetch_one=True
+            )
+        else:
+            result = db.execute(
+                "SELECT * FROM content WHERE slug = %s",
+                (slug,),
+                fetch_one=True
+            )
         
-        result = query.execute()
-        
-        if not result.data:
+        if not result:
             raise NotFoundError(detail=f"Content not found: {slug}")
         
-        return self._map_to_content(result.data[0])
+        return self._map_to_content(result)
     
     async def create_content(
         self,
@@ -73,35 +88,34 @@ class ContentService:
             content_data: 컨텐츠 데이터
             author_id: 작성자 ID
         """
-        now = datetime.utcnow().isoformat()
+        now = datetime.utcnow()
         
         # slug 중복 확인
-        existing = db.table(self.TABLE_CONTENT).select("id").eq(
-            "slug", content_data.slug
-        ).execute()
+        existing = db.execute(
+            "SELECT id FROM content WHERE slug = %s",
+            (content_data.slug,),
+            fetch_one=True
+        )
         
-        if existing.data:
+        if existing:
             raise DatabaseError(detail=f"Content with slug '{content_data.slug}' already exists")
         
-        data = {
-            "slug": content_data.slug,
-            "title": content_data.title,
-            "description": content_data.description,
-            "content": content_data.content,
-            "category": content_data.category,
-            "author_id": str(author_id),
-            "is_published": content_data.is_published,
-            "published_at": now if content_data.is_published else None,
-            "created_at": now,
-        }
+        result = db.execute_returning(
+            """
+            INSERT INTO content (slug, title, description, content, category, author_id, is_published, published_at, created_at)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+            RETURNING *
+            """,
+            (content_data.slug, content_data.title, content_data.description,
+             content_data.content, content_data.category, str(author_id),
+             content_data.is_published, now if content_data.is_published else None, now)
+        )
         
-        result = db.table(self.TABLE_CONTENT).insert(data).execute()
-        
-        if not result.data:
+        if not result:
             raise DatabaseError(detail="Failed to create content")
         
         logger.info(f"Content created: {content_data.slug} by {author_id}")
-        return self._map_to_content(result.data[0])
+        return self._map_to_content(result)
     
     async def update_content(
         self,
@@ -116,22 +130,26 @@ class ContentService:
             content_data: 업데이트할 데이터
         """
         # 기존 컨텐츠 확인
-        existing_result = db.table(self.TABLE_CONTENT).select("*").eq("slug", slug).execute()
+        existing = db.execute(
+            "SELECT * FROM content WHERE slug = %s",
+            (slug,),
+            fetch_one=True
+        )
         
-        if not existing_result.data:
+        if not existing:
             raise NotFoundError(detail=f"Content not found: {slug}")
-        
-        existing = existing_result.data[0]
         
         # 업데이트할 데이터 준비
         update_data = {}
         
         if content_data.slug is not None and content_data.slug != slug:
             # slug 변경 시 중복 확인
-            slug_check = db.table(self.TABLE_CONTENT).select("id").eq(
-                "slug", content_data.slug
-            ).execute()
-            if slug_check.data:
+            slug_check = db.execute(
+                "SELECT id FROM content WHERE slug = %s",
+                (content_data.slug,),
+                fetch_one=True
+            )
+            if slug_check:
                 raise DatabaseError(detail=f"Content with slug '{content_data.slug}' already exists")
             update_data["slug"] = content_data.slug
         
@@ -151,21 +169,28 @@ class ContentService:
             update_data["is_published"] = content_data.is_published
             # 발행 상태가 변경되면 published_at 업데이트
             if content_data.is_published and not existing.get("is_published"):
-                update_data["published_at"] = datetime.utcnow().isoformat()
+                update_data["published_at"] = datetime.utcnow()
         
         if not update_data:
             # 변경사항 없음
             return self._map_to_content(existing)
         
-        update_data["updated_at"] = datetime.utcnow().isoformat()
+        update_data["updated_at"] = datetime.utcnow()
         
-        result = db.table(self.TABLE_CONTENT).update(update_data).eq("slug", slug).execute()
+        # 동적 UPDATE 쿼리 생성
+        set_clause = ", ".join([f"{key} = %s" for key in update_data.keys()])
+        values = list(update_data.values()) + [slug]
         
-        if not result.data:
+        result = db.execute_returning(
+            f"UPDATE content SET {set_clause} WHERE slug = %s RETURNING *",
+            tuple(values)
+        )
+        
+        if not result:
             raise DatabaseError(detail="Failed to update content")
         
         logger.info(f"Content updated: {slug}")
-        return self._map_to_content(result.data[0])
+        return self._map_to_content(result)
     
     async def delete_content(self, slug: str) -> None:
         """
@@ -174,10 +199,20 @@ class ContentService:
         Args:
             slug: 컨텐츠 slug
         """
-        result = db.table(self.TABLE_CONTENT).delete().eq("slug", slug).execute()
+        # 먼저 존재 여부 확인
+        existing = db.execute(
+            "SELECT id FROM content WHERE slug = %s",
+            (slug,),
+            fetch_one=True
+        )
         
-        if not result.data:
+        if not existing:
             raise NotFoundError(detail=f"Content not found: {slug}")
+        
+        db.execute(
+            "DELETE FROM content WHERE slug = %s",
+            (slug,)
+        )
         
         logger.info(f"Content deleted: {slug}")
     
@@ -199,4 +234,3 @@ class ContentService:
 
 
 content_service = ContentService()
-

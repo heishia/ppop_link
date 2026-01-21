@@ -8,11 +8,16 @@ from typing import Generator
 from fastapi.testclient import TestClient
 from unittest.mock import MagicMock, patch
 
-# Test environment variables
-os.environ["SUPABASE_URL"] = "https://test.supabase.co"
-os.environ["SUPABASE_KEY"] = "test-key"
-os.environ["SUPABASE_SERVICE_KEY"] = "test-service-key"
+# Test environment variables - Railway PostgreSQL
+os.environ["DATABASE_URL"] = "postgresql://test:test@localhost:5432/test"
 os.environ["DEBUG"] = "true"
+
+# Storage test environment variables - Railway Buckets (S3 compatible)
+os.environ["S3_ENDPOINT_URL"] = "https://test-bucket.storage.railway.app"
+os.environ["S3_ACCESS_KEY_ID"] = "test-access-key"
+os.environ["S3_SECRET_ACCESS_KEY"] = "test-secret-key"
+os.environ["S3_BUCKET_NAME"] = "test-bucket"
+os.environ["S3_REGION"] = "auto"
 
 # PPOP Auth test environment variables
 os.environ["PPOP_AUTH_API_URL"] = "https://test-auth-api.example.com"
@@ -39,28 +44,48 @@ def client(test_app) -> Generator:
 
 @pytest.fixture
 def mock_db():
-    """Mock Supabase database client"""
+    """Mock PostgreSQL database client"""
     mock = MagicMock()
     
-    # Mock table method chaining
-    mock_table = MagicMock()
-    mock.table.return_value = mock_table
-    mock_table.select.return_value = mock_table
-    mock_table.insert.return_value = mock_table
-    mock_table.update.return_value = mock_table
-    mock_table.delete.return_value = mock_table
-    mock_table.eq.return_value = mock_table
-    mock_table.order.return_value = mock_table
-    mock_table.limit.return_value = mock_table
+    # Mock execute method
+    mock.execute.return_value = []
+    mock.execute_returning.return_value = None
+    mock.execute_many.return_value = None
+    mock.count.return_value = 0
     
     return mock
 
 
 @pytest.fixture
+def mock_db_with_patch():
+    """Mock database with patch context"""
+    with patch("backend.core.database.db") as mock_db:
+        mock_db.execute.return_value = []
+        mock_db.execute_returning.return_value = None
+        mock_db.count.return_value = 0
+        yield mock_db
+
+
+@pytest.fixture
 def mock_storage():
-    """Mock Supabase storage client"""
+    """Mock S3 storage client"""
     mock = MagicMock()
+    mock.put_object.return_value = {}
+    mock.delete_object.return_value = {}
+    mock.generate_presigned_url.return_value = "https://test-presigned-url.com"
     return mock
+
+
+@pytest.fixture
+def mock_s3_client():
+    """Mock boto3 S3 client with patch"""
+    with patch("backend.files.service.get_s3_client") as mock:
+        mock_client = MagicMock()
+        mock_client.put_object.return_value = {}
+        mock_client.delete_object.return_value = {}
+        mock_client.generate_presigned_url.return_value = "https://test-presigned-url.com"
+        mock.return_value = mock_client
+        yield mock_client
 
 
 @pytest.fixture
@@ -72,7 +97,6 @@ def sample_user_data():
         "public_link_id": "abc123",
         "username": "testuser",
         "email": "test@example.com",
-        "password_hash": None,  # PPOP Auth users don't have password
         "display_name": "Test User",
         "bio": "Test bio",
         "profile_image_url": None,
@@ -123,3 +147,21 @@ def mock_ppop_auth():
             "type": "access"
         }
         yield mock
+
+
+@pytest.fixture
+def mock_connection_pool():
+    """Mock database connection pool"""
+    with patch("backend.core.database.get_connection_pool") as mock:
+        mock_pool = MagicMock()
+        mock_conn = MagicMock()
+        mock_cursor = MagicMock()
+        
+        mock_pool.getconn.return_value = mock_conn
+        mock_conn.cursor.return_value.__enter__ = MagicMock(return_value=mock_cursor)
+        mock_conn.cursor.return_value.__exit__ = MagicMock(return_value=False)
+        mock_conn.__enter__ = MagicMock(return_value=mock_conn)
+        mock_conn.__exit__ = MagicMock(return_value=False)
+        
+        mock.return_value = mock_pool
+        yield mock_pool, mock_conn, mock_cursor

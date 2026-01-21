@@ -3,7 +3,7 @@ Core module initialization
 """
 
 from backend.core.config import settings
-from backend.core.database import db, get_supabase_client
+from backend.core.database import db
 from backend.core.exceptions import BaseAppException
 from backend.core.logger import logger, get_logger
 from backend.core.security import (
@@ -15,7 +15,6 @@ from backend.core.security import (
 __all__ = [
     "settings",
     "db",
-    "get_supabase_client",
     "BaseAppException",
     "logger",
     "get_logger",
