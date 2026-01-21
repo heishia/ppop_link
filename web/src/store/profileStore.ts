@@ -158,9 +158,13 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const response = await profileApi.uploadProfileImage(file);
+      // 캐시 버스팅을 위해 타임스탬프 추가
+      const urlWithCacheBust = response.url.includes("?")
+        ? `${response.url}&t=${Date.now()}`
+        : `${response.url}?t=${Date.now()}`;
       set((state) => ({
         profile: state.profile
-          ? { ...state.profile, profile_image_url: response.url }
+          ? { ...state.profile, profile_image_url: urlWithCacheBust }
           : null,
         isLoading: false,
       }));
@@ -183,8 +187,17 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
 
       const response = await profileApi.confirmProfileImageUpload(public_url);
 
+      // 캐시 버스팅을 위해 타임스탬프 추가
+      const profile = response.data;
+      if (profile?.profile_image_url) {
+        const url = profile.profile_image_url;
+        profile.profile_image_url = url.includes("?")
+          ? `${url}&t=${Date.now()}`
+          : `${url}?t=${Date.now()}`;
+      }
+
       set((state) => ({
-        profile: response.data || state.profile,
+        profile: profile || state.profile,
         isLoading: false,
       }));
 
@@ -202,10 +215,14 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const response = await profileApi.uploadBackgroundImage(file);
+      // 캐시 버스팅을 위해 타임스탬프 추가
+      const urlWithCacheBust = response.url.includes("?")
+        ? `${response.url}&t=${Date.now()}`
+        : `${response.url}?t=${Date.now()}`;
       // Update profile with new background URL
       set((state) => ({
         profile: state.profile
-          ? { ...state.profile, background_image_url: response.url }
+          ? { ...state.profile, background_image_url: urlWithCacheBust }
           : null,
         isLoading: false,
       }));

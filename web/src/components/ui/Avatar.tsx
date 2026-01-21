@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { User } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -14,6 +14,13 @@ interface AvatarProps {
 
 export function Avatar({ src, alt, size = 120, className }: AvatarProps) {
   const [imageError, setImageError] = useState(false);
+  const [imageSrc, setImageSrc] = useState(src);
+
+  // src가 변경되면 에러 상태 리셋
+  useEffect(() => {
+    setImageError(false);
+    setImageSrc(src);
+  }, [src]);
 
   return (
     <div
@@ -23,15 +30,16 @@ export function Avatar({ src, alt, size = 120, className }: AvatarProps) {
       )}
       style={{ width: size, height: size }}
     >
-      {!imageError ? (
+      {!imageError && imageSrc ? (
         <Image
-          src={src}
+          src={imageSrc}
           alt={alt}
           fill
           className="object-cover"
           sizes={`${size}px`}
           priority
           onError={() => setImageError(true)}
+          unoptimized={imageSrc.includes("storage.railway.app")}
         />
       ) : (
         <div className="flex h-full w-full items-center justify-center text-gray-400">
