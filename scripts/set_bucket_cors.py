@@ -6,9 +6,10 @@ Railway Bucket CORS 설정 스크립트
 import boto3
 from botocore.config import Config
 
-# Railway Bucket 설정
+# Railway Bucket 설정 (virtual-hosted-style)
 BUCKET_NAME = "optimized-cart-1xd8hmoxm4"
-ENDPOINT_URL = f"https://{BUCKET_NAME}.storage.railway.app"
+# boto3는 base endpoint + virtual addressing style 사용
+ENDPOINT_URL = "https://storage.railway.app"
 ACCESS_KEY_ID = "tid_pHVlgchXTldbtCRYQnSTVgfGFZqKu_bmOEBHwbNyuJmMgrPvEO"
 SECRET_ACCESS_KEY = "tsec_EVz4jOR8wL5-+oANW5u5zwpqXOdrQOs5P3A+cU+ANbuS7k3dOWs3hyjBg3H6BUyywY9CI6"
 REGION = "auto"

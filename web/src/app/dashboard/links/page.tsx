@@ -74,7 +74,7 @@ export default function LinksPage() {
     hasFetched: profileFetched,
     fetchProfile,
     updateProfile,
-    uploadProfileImageWithPresignedUrl,
+    uploadProfileImage,
     clearError: clearProfileError,
   } = useProfileStore();
 
@@ -533,7 +533,7 @@ export default function LinksPage() {
       const file = new File([croppedBlob], "profile.jpg", {
         type: "image/jpeg",
       });
-      await uploadProfileImageWithPresignedUrl(file);
+      await uploadProfileImage(file);
       setImageUploadComplete(true);
       setTimeout(() => {
         setImageUploadComplete(false);
