@@ -26,6 +26,10 @@ class Settings(BaseSettings):
     S3_BUCKET_NAME: str = "ppoplink"
     S3_REGION: str = "auto"
     
+    # CDN (public-buckets webserver for public image access)
+    CDN_BASE_URL: str = ""  # e.g., https://webserver-xxx.up.railway.app
+    CDN_BUCKET_ALIAS: str = "ppoplink"  # bucket alias used in CDN URL
+    
     # PPOP Auth (SSO)
     PPOP_AUTH_API_URL: str = ""  # https://auth-api.yourdomain.com
     PPOP_AUTH_CLIENT_URL: str = ""  # https://auth.yourdomain.com

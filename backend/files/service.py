@@ -62,8 +62,14 @@ class FileService:
     
     def _get_public_url(self, file_path: str) -> str:
         """파일의 공개 URL 생성"""
-        # Railway Buckets virtual-hosted-style URL 형식
-        # https://bucket-name.storage.railway.app/file_path
+        # CDN (public-buckets webserver)을 통한 공개 URL
+        # https://cdn-domain/bucket-alias/file_path
+        if settings.CDN_BASE_URL:
+            cdn_base = settings.CDN_BASE_URL.rstrip('/')
+            bucket_alias = settings.CDN_BUCKET_ALIAS
+            return f"{cdn_base}/{bucket_alias}/{file_path}"
+        
+        # CDN이 설정되지 않은 경우 기존 방식 (private bucket이라 403 에러 발생 가능)
         bucket = settings.S3_BUCKET_NAME
         return f"https://{bucket}.storage.railway.app/{file_path}"
     
