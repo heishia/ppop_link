@@ -4,14 +4,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-PPOPLINK is a Link in Bio SaaS service (Linktree alternative) built as a monorepo with a FastAPI backend and Next.js frontend. The project uses PPOP Auth for SSO authentication and Supabase for database and file storage.
+PPOPLINK is a Link in Bio SaaS service (Linktree alternative) built as a monorepo with a FastAPI backend and Next.js frontend. The project uses PPOP Auth for SSO authentication and Railway PostgreSQL for database.
 
 ## Tech Stack
 
-- **Backend**: FastAPI (Python 3.11+), Supabase (PostgreSQL), Sentry
+- **Backend**: FastAPI (Python 3.11+), Railway PostgreSQL, Sentry
 - **Frontend**: Next.js 14 (App Router), React, TypeScript, Tailwind CSS, Zustand
 - **Auth**: PPOP Auth SSO (OAuth 2.0 with JWT)
-- **Deployment**: Vercel (frontend), Railway (backend)
+- **Database**: Railway PostgreSQL (psycopg2)
+- **Storage**: Railway Buckets (S3 compatible, boto3)
+- **Deployment**: Railway (backend + database + storage)
 
 ## Common Commands
 
@@ -99,7 +101,7 @@ backend/{feature}/
 
 **Core Modules** (`backend/core/`):
 - `config.py`: Environment settings with pydantic-settings (loads `.env.local` for dev, `.env` for prod)
-- `database.py`: Supabase client management (anon key vs service role key)
+- `database.py`: PostgreSQL connection pool management (psycopg2 ThreadedConnectionPool)
 - `security.py`: JWT validation (validates PPOP Auth tokens using JWKS)
 - `security_middleware.py`: Security headers, IP blacklist, malicious pattern detection, request size limits
 - `exceptions.py`: Custom exception classes
@@ -107,7 +109,7 @@ backend/{feature}/
 
 **Request Flow**:
 1. Middleware chain: CORS → Security headers → IP blacklist → Malicious patterns → Request size limit
-2. Router → Service layer (business logic) → Database (Supabase)
+2. Router → Service layer (business logic) → Database (PostgreSQL via psycopg2)
 3. Exception handlers return standardized JSON responses
 
 **Rate Limiting**: 200 requests/minute per IP (configured with slowapi in `main.py`)
@@ -136,18 +138,18 @@ backend/{feature}/
 - Protected route enforcement
 - Cookie management for cross-origin requests
 
-### Database (Supabase)
+### Database (Railway PostgreSQL)
 
 **Key Tables**:
 - `users`: User profiles (id is PPOP Auth user_id UUID)
 - `user_plans`: Local plan cache (actual subscription managed by PPOP Auth)
 - `links`: User's custom links
 - `social_links`: User's social media links
-- `link_clicks`: Click tracking for analytics
+- `click_events`: Click tracking for analytics
 
-**RLS (Row Level Security)**: Managed by backend using service role key to bypass RLS.
+**Connection**: Direct PostgreSQL connection via psycopg2 with ThreadedConnectionPool.
 
-**Storage Buckets**:
+**Storage (Railway Buckets - S3 compatible)**:
 - `profiles`: Profile images
 - `backgrounds`: Background images (PRO only)
 - `content-images`: Content images
@@ -164,7 +166,8 @@ backend/{feature}/
 - Vercel deployment: Environment variables set in Vercel dashboard
 
 Critical environment variables:
-- `SUPABASE_URL`, `SUPABASE_KEY`, `SUPABASE_SERVICE_KEY`
+- `DATABASE_URL` (Railway PostgreSQL connection string)
+- `S3_ENDPOINT_URL`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_BUCKET_NAME`
 - `PPOP_AUTH_API_URL`, `PPOP_AUTH_CLIENT_URL`, `PPOP_AUTH_CLIENT_ID`, `PPOP_AUTH_CLIENT_SECRET`
 - `PPOP_AUTH_REDIRECT_URI`, `PPOP_AUTH_JWKS_URI`, `PPOP_AUTH_SERVICE_CODE`, `PPOP_AUTH_ADMIN_API_KEY`
 
@@ -202,7 +205,7 @@ Enforced in backend business logic:
 
 3. **Token Handling**: Tokens are stored in HttpOnly cookies (set by backend). Frontend never handles raw tokens. Middleware automatically refreshes expired tokens.
 
-4. **Database Access**: Backend uses Supabase service role key to bypass RLS. All RLS-like logic is implemented in backend service layer.
+4. **Database Access**: Backend uses direct PostgreSQL connection via psycopg2. All access control logic is implemented in backend service layer.
 
 5. **CORS**: Configured in `backend/main.py` to allow credentials from frontend origins. Production CORS must include PPOP Auth client origin.
 

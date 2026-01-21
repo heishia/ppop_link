@@ -6,10 +6,10 @@ Link in Bio SaaS Service - Linktree Alternative
 
 - **Frontend**: Next.js 14 (React, TypeScript, Tailwind CSS)
 - **Backend**: FastAPI (Python 3.11+)
-- **Database**: Supabase (PostgreSQL)
-- **File Storage**: Supabase Storage
-- **Authentication**: JWT
-- **Deployment**: Vercel (Frontend) + Railway (Backend)
+- **Database**: Railway PostgreSQL
+- **File Storage**: Railway Buckets (S3 compatible)
+- **Authentication**: PPOP Auth (SSO with JWT)
+- **Deployment**: Railway (Backend + Database + Storage)
 - **Monitoring**: Sentry
 - **CI/CD**: GitHub Actions
 
@@ -75,20 +75,21 @@ This project uses a clear separation between development and production environm
 pip install -r requirements.txt
 
 # Copy example file to create development environment
-cp .env.example .env.dev
+cp .env.example .env.local
 
-# Edit .env.dev with your Supabase credentials and settings
+# Edit .env.local with your Railway credentials and settings
 # Required variables:
 # - APP_ENV=dev
-# - SUPABASE_URL, SUPABASE_KEY, SUPABASE_SERVICE_KEY
-# - JWT_SECRET_KEY
+# - DATABASE_URL (Railway PostgreSQL)
+# - PPOP_AUTH_* (SSO settings)
 # - Other configuration as needed
 ```
 
 #### Database Setup
 
 ```bash
-# Run database migrations in Supabase SQL Editor
+# Run database migrations in Railway PostgreSQL
+# Connect using psql or any PostgreSQL client
 # Execute database/schema.sql
 # (Optional) Execute database/seed.sql for test data
 ```
@@ -321,41 +322,40 @@ See `.env.example` for the complete list. Key variables:
 # App Configuration
 APP_ENV=dev                    # dev or prod
 APP_NAME=PPOPLINK
-APP_PORT=8000
+APP_PORT=8005
 
-# Database (Supabase)
-SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_KEY=your-supabase-anon-key
-SUPABASE_SERVICE_KEY=your-supabase-service-role-key
+# Database (Railway PostgreSQL)
+DATABASE_URL=postgresql://postgres:password@host:5432/railway
 
-# Authentication (JWT)
-JWT_SECRET_KEY=your-super-secret-jwt-key
-JWT_ALGORITHM=HS256
-JWT_ACCESS_TOKEN_EXPIRE_MINUTES=30
-JWT_REFRESH_TOKEN_EXPIRE_DAYS=7
+# Storage (Railway Buckets - S3 compatible)
+S3_ENDPOINT_URL=https://your-bucket.storage.railway.app
+S3_ACCESS_KEY_ID=your-access-key
+S3_SECRET_ACCESS_KEY=your-secret-key
+S3_BUCKET_NAME=ppoplink
+S3_REGION=auto
+
+# PPOP Auth (SSO)
+PPOP_AUTH_API_URL=https://auth-api.yourdomain.com
+PPOP_AUTH_CLIENT_URL=https://auth.yourdomain.com
+PPOP_AUTH_CLIENT_ID=your-client-id
+PPOP_AUTH_CLIENT_SECRET=your-client-secret
+PPOP_AUTH_REDIRECT_URI=https://ppoplink.site/auth/callback
+PPOP_AUTH_JWKS_URI=https://auth-api.yourdomain.com/.well-known/jwks.json
 
 # Server Configuration
 DEBUG=true                     # Enable debug mode and API docs
 API_PREFIX=/api
 CORS_ORIGINS=http://localhost:3000
 
-# Storage (Supabase Storage)
+# Storage Buckets
 STORAGE_BUCKET_PROFILES=profiles
 STORAGE_BUCKET_BACKGROUNDS=backgrounds
+STORAGE_BUCKET_CONTENT_IMAGES=content-images
 MAX_FILE_SIZE_MB=5
 
 # Plan Limits
-FREE_MAX_LINKS=5
-FREE_MAX_SOCIAL_LINKS=3
-
-# SMS Verification (Naver Cloud Platform SENS)
-NCP_SENS_API_URL=https://sens.apigw.ntruss.com
-NCP_SENS_SERVICE_ID=your-service-id
-NCP_SENS_ACCESS_KEY=your-access-key
-NCP_SENS_SECRET_KEY=your-secret-key
-NCP_SENS_FROM_NUMBER=01012345678
-SMS_CODE_EXPIRY_MINUTES=3
-SMS_CODE_LENGTH=6
+FREE_MAX_LINKS=6
+FREE_MAX_SOCIAL_LINKS=5
 
 # Logging
 LOG_LEVEL=INFO                 # DEBUG, INFO, WARNING, ERROR
@@ -430,9 +430,8 @@ npm run test:coverage
 ## Monitoring
 
 - **Sentry**: Error tracking and performance monitoring
-- **Vercel Analytics**: Web vitals and user analytics
 - **Railway Metrics**: Backend performance and resource usage
-- **Supabase Dashboard**: Database queries and storage
+- **Railway PostgreSQL**: Database monitoring and metrics
 
 ## Contributing
 
