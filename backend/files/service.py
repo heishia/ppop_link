@@ -61,17 +61,23 @@ class FileService:
         return settings.S3_BUCKET_NAME
     
     def _get_public_url(self, file_path: str) -> str:
-        """파일의 공개 URL 생성"""
-        # CDN (public-buckets webserver)을 통한 공개 URL
-        # https://cdn-domain/bucket-alias/file_path
-        if settings.CDN_BASE_URL:
-            cdn_base = settings.CDN_BASE_URL.rstrip('/')
-            bucket_alias = settings.CDN_BUCKET_ALIAS
-            return f"{cdn_base}/{bucket_alias}/{file_path}"
-        
-        # CDN이 설정되지 않은 경우 기존 방식 (private bucket이라 403 에러 발생 가능)
-        bucket = settings.S3_BUCKET_NAME
-        return f"https://{bucket}.storage.railway.app/{file_path}"
+        """파일의 공개 URL 생성 (Presigned URL 사용)"""
+        # Presigned URL 생성 (7일 유효) - CDN 없이 직접 접근 가능
+        try:
+            presigned_url = self.s3.generate_presigned_url(
+                'get_object',
+                Params={
+                    'Bucket': settings.S3_BUCKET_NAME,
+                    'Key': file_path,
+                },
+                ExpiresIn=604800  # 7일 (7 * 24 * 60 * 60)
+            )
+            return presigned_url
+        except Exception as e:
+            logger.error(f"Failed to generate presigned URL: {e}")
+            # 실패 시 기본 URL 반환
+            bucket = settings.S3_BUCKET_NAME
+            return f"https://{bucket}.storage.railway.app/{file_path}"
     
     def create_presigned_upload_url(
         self,
