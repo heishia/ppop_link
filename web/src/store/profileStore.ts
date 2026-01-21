@@ -158,17 +158,34 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const response = await profileApi.uploadProfileImage(file);
+      console.log("[ProfileStore] Upload response:", response);
+      
+      if (!response.url) {
+        console.error("[ProfileStore] No URL in response:", response);
+        throw new Error("No URL returned from server");
+      }
+      
+      // 업로드 성공 후 프로필을 다시 가져와서 최신 상태 보장
+      const profileResponse = await profileApi.getProfile();
+      const updatedProfile = profileResponse.data;
+      
       // 캐시 버스팅을 위해 타임스탬프 추가
-      const urlWithCacheBust = response.url.includes("?")
-        ? `${response.url}&t=${Date.now()}`
-        : `${response.url}?t=${Date.now()}`;
-      set((state) => ({
-        profile: state.profile
-          ? { ...state.profile, profile_image_url: urlWithCacheBust }
-          : null,
+      if (updatedProfile.profile_image_url) {
+        const url = updatedProfile.profile_image_url;
+        updatedProfile.profile_image_url = url.includes("?")
+          ? `${url}&t=${Date.now()}`
+          : `${url}?t=${Date.now()}`;
+      }
+      
+      console.log("[ProfileStore] Updated profile:", updatedProfile);
+      
+      set({
+        profile: updatedProfile,
         isLoading: false,
-      }));
+        lastFetched: Date.now(),
+      });
     } catch (error: unknown) {
+      console.error("[ProfileStore] Upload error:", error);
       set({
         error: parseApiError(error, "Failed to upload image"),
         isLoading: false,
@@ -215,17 +232,29 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const response = await profileApi.uploadBackgroundImage(file);
+      console.log("[ProfileStore] Background upload response:", response);
+      
+      if (!response.url) {
+        throw new Error("No URL returned from server");
+      }
+      
+      // 업로드 성공 후 프로필을 다시 가져와서 최신 상태 보장
+      const profileResponse = await profileApi.getProfile();
+      const updatedProfile = profileResponse.data;
+      
       // 캐시 버스팅을 위해 타임스탬프 추가
-      const urlWithCacheBust = response.url.includes("?")
-        ? `${response.url}&t=${Date.now()}`
-        : `${response.url}?t=${Date.now()}`;
-      // Update profile with new background URL
-      set((state) => ({
-        profile: state.profile
-          ? { ...state.profile, background_image_url: urlWithCacheBust }
-          : null,
+      if (updatedProfile.background_image_url) {
+        const url = updatedProfile.background_image_url;
+        updatedProfile.background_image_url = url.includes("?")
+          ? `${url}&t=${Date.now()}`
+          : `${url}?t=${Date.now()}`;
+      }
+      
+      set({
+        profile: updatedProfile,
         isLoading: false,
-      }));
+        lastFetched: Date.now(),
+      });
     } catch (error: unknown) {
       set({
         error: parseApiError(error, "Failed to upload background"),

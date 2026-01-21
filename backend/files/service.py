@@ -87,7 +87,8 @@ class FileService:
                 Params={
                     'Bucket': bucket_name,
                     'Key': file_path,
-                    'ContentType': 'image/jpeg'
+                    'ContentType': 'image/jpeg',
+                    'ACL': 'public-read'  # 공개 읽기 권한 설정
                 },
                 ExpiresIn=3600  # 1시간
             )
@@ -170,7 +171,8 @@ class FileService:
                 Bucket=bucket_name,
                 Key=file_path,
                 Body=content,
-                ContentType=file.content_type or 'image/jpeg'
+                ContentType=file.content_type or 'image/jpeg',
+                ACL='public-read'  # 공개 읽기 권한 설정
             )
             
             public_url = self._get_public_url(file_path)
@@ -207,7 +209,8 @@ class FileService:
                 Bucket=bucket_name,
                 Key=file_path,
                 Body=content,
-                ContentType=file.content_type or 'image/jpeg'
+                ContentType=file.content_type or 'image/jpeg',
+                ACL='public-read'  # 공개 읽기 권한 설정
             )
             
             public_url = self._get_public_url(file_path)

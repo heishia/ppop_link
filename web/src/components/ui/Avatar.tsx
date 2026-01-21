@@ -18,6 +18,7 @@ export function Avatar({ src, alt, size = 120, className }: AvatarProps) {
 
   // src가 변경되면 에러 상태 리셋
   useEffect(() => {
+    console.log("[Avatar] src changed:", src);
     setImageError(false);
     setImageSrc(src);
   }, [src]);
@@ -38,7 +39,10 @@ export function Avatar({ src, alt, size = 120, className }: AvatarProps) {
           className="object-cover"
           sizes={`${size}px`}
           priority
-          onError={() => setImageError(true)}
+          onError={(e) => {
+            console.error("[Avatar] Image load error:", imageSrc, e);
+            setImageError(true);
+          }}
           unoptimized={imageSrc.includes("storage.railway.app")}
         />
       ) : (

@@ -70,6 +70,7 @@ export const profileApi = {
       body: file,
       headers: {
         "Content-Type": file.type,
+        "x-amz-acl": "public-read",  // 공개 읽기 권한 설정
       },
     });
 
