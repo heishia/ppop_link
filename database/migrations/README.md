@@ -1,19 +1,26 @@
-# Database Migrations
+﻿# Database Migrations
 
-## 마이그레이션 실행 방법
+## 留덉씠洹몃젅?댁뀡 ?ㅽ뻾 諛⑸쾿
 
-### Supabase Dashboard에서 실행
+### Railway PostgreSQL?먯꽌 ?ㅽ뻾
 
-1. [Supabase Dashboard](https://supabase.com/dashboard) 접속
-2. 프로젝트 선택
-3. 왼쪽 메뉴에서 **SQL Editor** 클릭
-4. **New Query** 클릭
-5. 마이그레이션 파일 내용을 복사하여 붙여넣기
-6. **Run** 버튼 클릭
+1. Railway Dashboard ?묒냽
+2. PostgreSQL ?쒕퉬???좏깮
+3. **Connect** ??뿉???곌껐 ?뺣낫 ?뺤씤
+4. psql ?먮뒗 Database ?대씪?댁뼵?몃줈 ?곌껐
+5. 留덉씠洹몃젅?댁뀡 ?뚯씪 ?댁슜??蹂듭궗?섏뿬 ?ㅽ뻾
 
-### 실행 순서
+```bash
+# psql濡??곌껐
+psql $DATABASE_URL
 
-마이그레이션은 번호 순서대로 실행해야 합니다:
+# ?먮뒗 ?뚯씪濡??ㅽ뻾
+psql $DATABASE_URL -f database/migrations/001_add_public_link_id.sql
+```
+
+### ?ㅽ뻾 ?쒖꽌
+
+留덉씠洹몃젅?댁뀡? 踰덊샇 ?쒖꽌?濡??ㅽ뻾?댁빞 ?⑸땲??
 
 1. `001_add_public_link_id.sql`
 2. `002_add_button_style.sql`
@@ -24,50 +31,12 @@
 7. `007_add_content_images_table.sql`
 8. `008_remove_is_admin_column.sql`
 9. `009_make_password_hash_nullable.sql`
-10. **`010_create_ip_blacklist.sql`** ← 새로 추가된 보안 마이그레이션
+10. `010_create_ip_blacklist.sql`
+11. `011_remove_password_hash.sql`
 
-## 최신 마이그레이션 (010)
+## 二쇱쓽?ы빆
 
-### 010_create_ip_blacklist.sql
+**?꾨줈?뺤뀡 ?섍꼍?먯꽌 留덉씠洹몃젅?댁뀡 ?ㅽ뻾 ??**
 
-IP 블랙리스트 테이블을 생성합니다. 이 테이블은 악의적인 IP 주소를 추적하고 차단하는 데 사용됩니다.
-
-**기능:**
-
-- IP 주소 저장 (IPv4/IPv6)
-- 차단 이유 기록
-- 만료 시간 설정 (임시 차단)
-- 영구 차단 옵션
-- 위반 횟수 추적
-
-**실행 후 확인:**
-
-```sql
--- 테이블이 생성되었는지 확인
-SELECT table_name
-FROM information_schema.tables
-WHERE table_name = 'ip_blacklist';
-
--- 인덱스 확인
-SELECT indexname
-FROM pg_indexes
-WHERE tablename = 'ip_blacklist';
-```
-
-## 롤백
-
-만약 마이그레이션을 롤백해야 한다면:
-
-```sql
--- 010 롤백
-DROP TABLE IF EXISTS ip_blacklist CASCADE;
-```
-
-## 주의사항
-
-⚠️ **프로덕션 환경에서 마이그레이션 실행 전:**
-
-1. 데이터베이스 백업
-2. 마이그레이션 스크립트 검토
-3. 개발 환경에서 먼저 테스트
-4. 트래픽이 적은 시간대에 실행
+1. ?곗씠?곕쿋?댁뒪 諛깆뾽
+2. 留덉씠洹몃젅?댁뀡 ?ㅽ겕由쏀듃 寃??3. 媛쒕컻 ?섍꼍?먯꽌 癒쇱? ?뚯뒪??4. ?몃옒?쎌씠 ?곸? ?쒓컙????ㅽ뻾
