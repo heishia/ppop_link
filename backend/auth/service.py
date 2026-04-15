@@ -82,13 +82,14 @@ class AuthService:
         }
         
         # 디버깅: 요청 정보 로깅 (client_secret은 마스킹)
+        masked_secret = f"{request_data['client_secret'][:4]}...{request_data['client_secret'][-4:]}" if len(request_data.get('client_secret', '')) > 8 else "***"
         logger.info(f"Token exchange request to: {token_url}")
         logger.info(f"Request data: grant_type={request_data['grant_type']}, "
                    f"code={code[:10]}..., client_id={request_data['client_id']}, "
+                   f"client_secret={masked_secret}, "
                    f"redirect_uri={request_data['redirect_uri']}")
         
         async with httpx.AsyncClient() as client:
-            # JSON 형식으로 요청 (auth-server가 JSON을 기대함)
             response = await client.post(
                 token_url,
                 json=request_data,
