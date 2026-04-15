@@ -6,13 +6,26 @@
   "scripts": {
     "dev": "node scripts/dev.js",
     "dev:backend": "python run.py",
-    "dev:web": "node scripts/dev.js",
+    "dev:web": "cd web && npm run dev",
+    "dev:open": "cd web && npm run dev:open",
     "build": "cd web && npm run build",
+    "build:web": "cd web && npm run build",
     "start": "cd web && npm start",
     "lint": "cd web && npm run lint",
+    "lint:fix": "cd web && npm run lint:fix",
+    "lint:backend": "ruff check backend/",
+    "format": "cd web && npm run format",
+    "format:backend": "black backend/",
+    "type-check": "cd web && npm run type-check",
+    "type-check:backend": "mypy backend/ --ignore-missing-imports",
     "test": "cd web && npm test",
+    "test:backend": "pytest",
+    "test:coverage": "cd web && npm run test:coverage",
+    "test:backend:coverage": "pytest --cov=backend --cov-report=html",
     "install:web": "cd web && npm install",
-    "install:all": "npm run install:web"
+    "install:backend": "pip install -r requirements.txt",
+    "install:all": "npm run install:backend && npm run install:web",
+    "setup": "npm run install:all && echo Setup complete!"
   },
   "keywords": [
     "ppoplink",

@@ -17,32 +17,39 @@ Link in Bio SaaS Service - Linktree Alternative
 
 ```
 ppoplink/
-├── apps/
-│   └── web/              # Next.js frontend application
-│       ├── src/
-│       │   └── app/      # App router pages
-│       ├── package.json
-│       └── next.config.js
-├── backend/              # FastAPI backend server
-│   ├── auth/             # Authentication module
-│   ├── profiles/         # Profile management
-│   ├── links/            # Links & Social links
-│   ├── public/           # Public profile pages
-│   ├── admin/            # Admin dashboard
-│   ├── sms/              # SMS verification service
-│   ├── files/            # File upload service
-│   ├── core/             # Core configs, models, utils
-│   ├── tests/            # Test suite
-│   └── utils/            # Utility functions
-├── database/             # Database schemas
-│   ├── schema.sql        # Table definitions
-│   └── seed.sql          # Initial seed data
-├── .github/
-│   └── workflows/        # CI/CD workflows
-├── docs/                 # Documentation
-├── Dockerfile            # Backend container
-├── docker-compose.yml    # Local development
-└── requirements.txt      # Python dependencies
+├── web/                      # Next.js frontend
+│   ├── src/
+│   │   ├── app/              # App Router pages
+│   │   ├── components/       # React components
+│   │   ├── lib/              # API client, hooks, utils
+│   │   ├── store/            # Zustand stores
+│   │   ├── types/            # TypeScript types
+│   │   └── constants/        # Constants
+│   ├── public/               # Static assets
+│   ├── scripts/              # Dev scripts
+│   ├── package.json
+│   └── railway.toml          # Frontend Railway config
+├── backend/                  # FastAPI backend
+│   ├── auth/                 # Authentication (PPOP Auth SSO)
+│   ├── profiles/             # Profile management
+│   ├── links/                # Links & Social links
+│   ├── public/               # Public profile pages
+│   ├── analytics/            # Click analytics
+│   ├── content/              # Content management
+│   ├── admin/                # Admin dashboard
+│   ├── files/                # File upload (S3)
+│   ├── core/                 # Config, DB, security, middleware
+│   ├── tests/                # Test suite (unit + integration)
+│   └── utils/                # Utility functions
+├── scripts/                  # Root dev scripts
+│   └── dev.js                # Concurrent backend + frontend
+├── .github/workflows/        # CI/CD workflows
+├── Dockerfile                # Backend container (Railway)
+├── railway.toml              # Backend Railway config
+├── requirements.txt          # Python dependencies
+├── package.json              # Root scripts (monorepo)
+├── pytest.ini                # Pytest configuration
+└── .env.example              # Environment template
 ```
 
 ## Quick Start
@@ -51,178 +58,135 @@ ppoplink/
 
 - Python 3.11+
 - Node.js 20+
-- Docker (optional, for containerized development)
+- npm
 
-### 1. Clone Repository
+### 1. Clone & Install
 
 ```bash
 git clone https://github.com/your-org/ppoplink.git
 cd ppoplink
+
+# Install all dependencies (backend + frontend)
+npm run setup
 ```
 
-### 2. Backend Setup
-
-#### Environment Configuration
-
-This project uses a clear separation between development and production environments:
-
-- `.env.example` - Environment variable specification (committed)
-- `.env.dev` - Local development (gitignored)
-- `.env.prod` - Production server (gitignored)
+### 2. Environment Setup
 
 ```bash
-# Install Python dependencies
-pip install -r requirements.txt
-
-# Copy example file to create development environment
+# Backend (.env.example → .env.local)
 cp .env.example .env.local
 
-# Edit .env.local with your Railway credentials and settings
-# Required variables:
-# - APP_ENV=dev
-# - DATABASE_URL (Railway PostgreSQL)
-# - PPOP_AUTH_* (SSO settings)
-# - Other configuration as needed
+# Frontend (web/.env.example → web/.env.local)
+cp web/.env.example web/.env.local
+
+# Edit both files with your credentials
 ```
 
-#### Database Setup
+### 3. Run Development Server
 
 ```bash
-# Run database migrations in Railway PostgreSQL
-# Connect using psql or any PostgreSQL client
-# Execute database/schema.sql
-# (Optional) Execute database/seed.sql for test data
-```
-
-#### Run Backend
-
-```bash
-# The backend will automatically load .env.dev when APP_ENV=dev
-python -m backend
-# or
-python backend/run.py
-```
-
-Backend runs at: http://localhost:8000
-
-API Docs: http://localhost:8000/api/docs (DEBUG mode only)
-
-### 3. Frontend Setup
-
-```bash
-cd apps/web
-
-# Install dependencies
-npm install
-
-# Copy environment file
-cp .env.example .env.local
-
-# Edit .env.local with your API URL
-
-# Run development server
+# Backend + Frontend simultaneously
 npm run dev
+
+# Or run separately:
+npm run dev:backend    # Backend only (localhost:8005)
+npm run dev:web        # Frontend only (localhost:3000)
 ```
 
-Frontend runs at: http://localhost:3000
+- **Backend API Docs**: http://localhost:8005/api/docs
+- **Frontend**: http://localhost:3000
 
-### 4. Docker Setup (Alternative)
+---
 
-```bash
-# Copy example file to create development environment
-cp .env.example .env.dev
+## Commands Reference
 
-# Edit .env.dev with your credentials
-# Make sure APP_ENV=dev is set
+### Root Commands (from project root)
 
-# Build and start services
-docker-compose up --build
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Backend + Frontend 동시 실행 |
+| `npm run dev:backend` | Backend만 실행 (port 8005) |
+| `npm run dev:web` | Frontend만 실행 (port 3000) |
+| `npm run dev:open` | Frontend 실행 + 브라우저 자동 열기 |
+| `npm run setup` | 전체 의존성 설치 (backend + web) |
+| `npm run build` | Frontend 프로덕션 빌드 |
+| `npm start` | Frontend 프로덕션 서버 |
 
-# Run in detached mode
-docker-compose up -d
+### Backend Commands
 
-# View logs
-docker-compose logs -f backend
+| Command | Description |
+|---------|-------------|
+| `python run.py` | Backend 서버 실행 |
+| `python -m backend` | Backend 서버 실행 (모듈) |
+| `pip install -r requirements.txt` | Python 패키지 설치 |
+| `pytest` | 전체 테스트 실행 |
+| `pytest backend/tests/unit/` | 유닛 테스트만 실행 |
+| `pytest backend/tests/integration/` | 통합 테스트만 실행 |
+| `pytest --cov=backend --cov-report=html` | 커버리지 리포트 |
+| `ruff check backend/` | 린트 검사 |
+| `black backend/` | 코드 포매팅 |
+| `mypy backend/ --ignore-missing-imports` | 타입 체크 |
 
-# Stop services
-docker-compose down
+### Frontend Commands (from `web/` or root)
+
+| Command (root) | Command (web/) | Description |
+|----------------|----------------|-------------|
+| `npm run lint` | `npm run lint` | 린트 검사 |
+| `npm run lint:fix` | `npm run lint:fix` | 린트 자동 수정 |
+| `npm run format` | `npm run format` | Prettier 포매팅 |
+| `npm run type-check` | `npm run type-check` | TypeScript 타입 체크 |
+| `npm test` | `npm test` | 테스트 실행 |
+| `npm run test:coverage` | `npm run test:coverage` | 커버리지 리포트 |
+
+### All-in-one Root Commands
+
+| Command | Description |
+|---------|-------------|
+| `npm run install:all` | Backend + Frontend 의존성 설치 |
+| `npm run install:backend` | Backend 의존성만 설치 |
+| `npm run install:web` | Frontend 의존성만 설치 |
+| `npm run lint:backend` | Backend 린트 (ruff) |
+| `npm run format:backend` | Backend 포매팅 (black) |
+| `npm run type-check:backend` | Backend 타입 체크 (mypy) |
+| `npm run test:backend` | Backend 테스트 (pytest) |
+| `npm run test:backend:coverage` | Backend 커버리지 리포트 |
+
+---
+
+## Environment Variables
+
+### Strategy
+
+| File | Purpose | Git |
+|------|---------|-----|
+| `.env.example` | Template (backend) | Committed |
+| `.env.local` | Development (backend) | Gitignored |
+| `.env` | Production (backend) | Gitignored |
+| `web/.env.example` | Template (frontend) | Committed |
+| `web/.env.local` | Development (frontend) | Gitignored |
+
+Backend는 `APP_ENV` 값에 따라 자동으로 환경 파일을 로드합니다:
+- `APP_ENV=dev` → `.env.local`
+- `APP_ENV=prod` → `.env`
+
+### Key Backend Variables
+
+```env
+APP_ENV=dev
+APP_PORT=8005
+DATABASE_URL=postgresql://user:pass@host:5432/railway
+S3_ENDPOINT_URL=https://your-bucket.storage.railway.app
+PPOP_AUTH_API_URL=https://auth-api.yourdomain.com
+PPOP_AUTH_CLIENT_ID=your-client-id
 ```
 
-**Docker Features:**
-- Hot reload enabled for development
-- Health checks configured
-- Automatic restart on failure
-- Volume mounting for live code updates
+### Key Frontend Variables
 
-## Development
-
-### Backend Development
-
-```bash
-# Run tests
-pytest
-
-# Run tests with coverage
-pytest --cov=backend --cov-report=html
-
-# Lint code
-ruff check backend/
-
-# Format code
-black backend/
-
-# Type check
-mypy backend/ --ignore-missing-imports
+```env
+NEXT_PUBLIC_API_URL=http://localhost:8005
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+NEXT_PUBLIC_PPOP_AUTH_CLIENT_URL=https://auth.yourdomain.com
 ```
-
-### Frontend Development
-
-```bash
-cd apps/web
-
-# Run tests
-npm test
-
-# Run tests with coverage
-npm run test:coverage
-
-# Lint code
-npm run lint
-
-# Format code
-npm run format
-
-# Type check
-npm run type-check
-```
-
-## Deployment
-
-See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for detailed deployment instructions.
-
-### Quick Deploy
-
-1. **Setup Secrets**: Add all required secrets to GitHub (see [docs/GITHUB_SECRETS.md](docs/GITHUB_SECRETS.md))
-
-2. **Push to Main**: Automatic staging deployment
-   ```bash
-   git push origin main
-   ```
-
-3. **Create Release**: Automatic production deployment
-   ```bash
-   # Via GitHub UI: Releases → Draft a new release
-   # Or via CLI:
-   gh release create v1.0.0 --title "Release v1.0.0" --notes "Release notes"
-   ```
-
-## CI/CD Pipeline
-
-- **Backend CI/CD**: Lint → Test → Build Docker → Deploy Railway → Sentry
-- **Web CI/CD**: Lint → Type Check → Test → Build → Deploy Vercel → E2E → Sentry
-- **Release Deploy**: Detect Changes → Parallel Deploy → Health Check → Notify
-
-See [docs/CI_CD_ARCHITECTURE.md](docs/CI_CD_ARCHITECTURE.md) for detailed architecture.
 
 ## API Endpoints
 
@@ -230,223 +194,96 @@ See [docs/CI_CD_ARCHITECTURE.md](docs/CI_CD_ARCHITECTURE.md) for detailed archit
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| POST | `/register` | Register new user |
-| POST | `/login` | Login |
-| POST | `/refresh` | Refresh tokens |
-| GET | `/me` | Get current user |
-| POST | `/logout` | Logout |
+| GET | `/login` | OAuth 로그인 (PPOP Auth 리다이렉트) |
+| GET | `/callback` | OAuth 콜백 처리 |
+| POST | `/refresh` | 토큰 갱신 |
+| GET | `/me` | 현재 유저 정보 |
+| POST | `/logout` | 로그아웃 |
 
 ### Profile (`/api/profile`)
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/` | Get my profile |
-| PUT | `/` | Update profile |
-| PUT | `/theme` | Update theme/background color |
-| POST | `/image` | Upload profile image |
-| POST | `/background` | Upload background image (Pro only) |
+| GET | `/` | 내 프로필 조회 |
+| PUT | `/` | 프로필 수정 |
+| PUT | `/theme` | 테마/배경색 변경 |
+| POST | `/image` | 프로필 이미지 업로드 |
+| POST | `/background` | 배경 이미지 업로드 (PRO) |
 
 ### Links (`/api/links`)
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/` | Get my links |
-| POST | `/` | Create link |
-| PUT | `/{id}` | Update link |
-| DELETE | `/{id}` | Delete link |
-| PUT | `/reorder` | Reorder links |
+| GET | `/` | 내 링크 목록 |
+| POST | `/` | 링크 생성 |
+| PUT | `/{id}` | 링크 수정 |
+| DELETE | `/{id}` | 링크 삭제 |
+| PUT | `/reorder` | 링크 순서 변경 |
 
 ### Social Links (`/api/social-links`)
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/` | Get my social links |
-| POST | `/` | Create social link |
-| PUT | `/{id}` | Update social link |
-| DELETE | `/{id}` | Delete social link |
-
-### SMS (`/api/sms`)
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/send` | Send verification SMS |
-| POST | `/verify` | Verify SMS code |
-| POST | `/resend` | Resend verification SMS |
+| GET | `/` | 소셜 링크 목록 |
+| POST | `/` | 소셜 링크 생성 |
+| PUT | `/{id}` | 소셜 링크 수정 |
+| DELETE | `/{id}` | 소셜 링크 삭제 |
 
 ### Public (`/api/u`)
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/{username}` | Get public profile |
-| POST | `/{username}/click/{link_id}` | Record click |
+| GET | `/{username}` | 공개 프로필 조회 |
+| POST | `/{username}/click/{link_id}` | 클릭 기록 |
 
 ### Admin (`/api/admin`)
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/users` | List users (paginated) |
-| GET | `/stats` | Get statistics |
-| PUT | `/users/{id}/plan` | Update user plan |
+| GET | `/users` | 유저 목록 (페이지네이션) |
+| GET | `/stats` | 통계 조회 |
+| PUT | `/users/{id}/plan` | 유저 플랜 변경 |
 
 ## Plan Limits
 
-| Feature | Free | Pro |
+| Feature | Free | PRO |
 |---------|------|-----|
-| Links | 5 | Unlimited |
-| Social Links | 3 | Unlimited |
+| Links | 6 | Unlimited |
+| Social Links | 5 | Unlimited |
 | Background Color | Yes | Yes |
 | Background Image | No | Yes |
-| Themes | Basic (2) | All |
 
-## Environment Variables
+## Deployment
 
-### Environment Strategy
+- **Backend**: Railway (Docker, auto-deploy on push to main)
+- **Frontend**: Railway (railpack builder)
+- **CI/CD**: GitHub Actions
 
-The project uses a **3-file environment strategy** for clear separation:
-
-1. **`.env.example`** - Template with all required variables (committed to git)
-2. **`.env.dev`** - Development configuration (gitignored)
-3. **`.env.prod`** - Production configuration (gitignored, server only)
-
-**Key Benefits:**
-- No code changes needed when switching environments
-- Environment variables automatically loaded based on `APP_ENV`
-- Easy onboarding for new team members
-- Production secrets never in repository
-
-### Backend Environment Variables
-
-See `.env.example` for the complete list. Key variables:
-
-```env
-# App Configuration
-APP_ENV=dev                    # dev or prod
-APP_NAME=PPOPLINK
-APP_PORT=8005
-
-# Database (Railway PostgreSQL)
-DATABASE_URL=postgresql://postgres:password@host:5432/railway
-
-# Storage (Railway Buckets - S3 compatible)
-S3_ENDPOINT_URL=https://your-bucket.storage.railway.app
-S3_ACCESS_KEY_ID=your-access-key
-S3_SECRET_ACCESS_KEY=your-secret-key
-S3_BUCKET_NAME=ppoplink
-S3_REGION=auto
-
-# PPOP Auth (SSO)
-PPOP_AUTH_API_URL=https://auth-api.yourdomain.com
-PPOP_AUTH_CLIENT_URL=https://auth.yourdomain.com
-PPOP_AUTH_CLIENT_ID=your-client-id
-PPOP_AUTH_CLIENT_SECRET=your-client-secret
-PPOP_AUTH_REDIRECT_URI=https://ppoplink.site/auth/callback
-PPOP_AUTH_JWKS_URI=https://auth-api.yourdomain.com/.well-known/jwks.json
-
-# Server Configuration
-DEBUG=true                     # Enable debug mode and API docs
-API_PREFIX=/api
-CORS_ORIGINS=http://localhost:3000
-
-# Storage Buckets
-STORAGE_BUCKET_PROFILES=profiles
-STORAGE_BUCKET_BACKGROUNDS=backgrounds
-STORAGE_BUCKET_CONTENT_IMAGES=content-images
-MAX_FILE_SIZE_MB=5
-
-# Plan Limits
-FREE_MAX_LINKS=6
-FREE_MAX_SOCIAL_LINKS=5
-
-# Logging
-LOG_LEVEL=INFO                 # DEBUG, INFO, WARNING, ERROR
-```
-
-### Environment-Specific Behavior
-
-**Development (`APP_ENV=dev`):**
-- `DEBUG=true` - API docs enabled at `/api/docs`
-- Hot reload enabled
-- Verbose logging
-- Loads `.env.dev`
-
-**Production (`APP_ENV=prod`):**
-- `DEBUG=false` - API docs disabled
-- Optimized performance
-- Minimal logging
-- Loads `.env.prod`
-
-### Frontend
-
-```env
-# API
-NEXT_PUBLIC_API_URL=http://localhost:8000/api
-
-# Sentry
-NEXT_PUBLIC_SENTRY_DSN=your-sentry-dsn
-SENTRY_ORG=your-org
-SENTRY_PROJECT=web
-SENTRY_AUTH_TOKEN=your-token
+```bash
+# Push to main triggers auto-deployment
+git push origin main
 ```
 
 ## Testing
 
-### Backend Tests
-
-- **Unit Tests**: Service layer logic
-- **Integration Tests**: API endpoints with TestClient
-- **Coverage Target**: 80%
+### Backend
 
 ```bash
-# Run all tests
-pytest
-
-# Run specific test file
-pytest backend/tests/unit/test_security.py
-
-# Run with coverage
-pytest --cov=backend --cov-report=html
+pytest                                    # All tests
+pytest backend/tests/unit/               # Unit tests only
+pytest backend/tests/integration/        # Integration tests only
+pytest --cov=backend --cov-report=html   # With coverage (target: 80%)
 ```
 
-### Frontend Tests
-
-- **Unit Tests**: React components with Jest
-- **Integration Tests**: API mocking with MSW
-- **E2E Tests**: User flows with Playwright
-- **Coverage Target**: 70%
+### Frontend
 
 ```bash
-cd apps/web
-
-# Run unit tests
-npm test
-
-# Run E2E tests
-npm run test:e2e
-
-# Run with coverage
-npm run test:coverage
+cd web
+npm test                  # All tests
+npm run test:watch        # Watch mode
+npm run test:coverage     # With coverage (target: 70%)
 ```
-
-## Monitoring
-
-- **Sentry**: Error tracking and performance monitoring
-- **Railway Metrics**: Backend performance and resource usage
-- **Railway PostgreSQL**: Database monitoring and metrics
-
-## Contributing
-
-1. Fork the repository
-2. Create feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit changes (`git commit -m 'feat: add amazing feature'`)
-4. Push to branch (`git push origin feature/amazing-feature`)
-5. Open Pull Request
 
 ## License
 
 MIT
-
-## Support
-
-- Documentation: [docs/](docs/)
-- Issues: [GitHub Issues](https://github.com/your-org/ppoplink/issues)
-- Email: support@ppoplink.site
