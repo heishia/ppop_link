@@ -196,19 +196,20 @@ class AuthService:
             return None
         return self._map_to_user(result)
     
-    async def _update_user_ppop_id(self, old_id: str, new_ppop_id: UUID, phone_number: Optional[str] = None) -> None:
+    async def _update_user_ppop_id(self, old_id, new_ppop_id: UUID, phone_number: Optional[str] = None) -> None:
         """기존 사용자의 PPOP Auth ID를 갱신하고 관련 테이블도 업데이트"""
         new_id = str(new_ppop_id)
+        old_id_str = str(old_id)
         
         db.execute(
             "UPDATE user_plans SET user_id = %s WHERE user_id = %s",
-            (new_id, old_id)
+            (new_id, old_id_str)
         )
         db.execute(
             "UPDATE users SET id = %s, phone_number = COALESCE(%s, phone_number) WHERE id = %s",
-            (new_id, phone_number, old_id)
+            (new_id, phone_number, old_id_str)
         )
-        logger.info(f"Updated user PPOP Auth ID: {old_id} -> {new_id}")
+        logger.info(f"Updated user PPOP Auth ID: {old_id_str} -> {new_id}")
     
     async def _create_user_from_ppop(self, ppop_user_id: UUID, email: Optional[str], phone_number: Optional[str] = None) -> User:
         """
