@@ -6,7 +6,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import { SocialPlatformIcon } from "@/components/ui/SocialPlatformIcon";
 import { Link, SocialLink } from "@/lib/api/links";
 import { User, ButtonStyle, FontFamily } from "@/lib/api/auth";
-import { DEFAULT_BACKGROUND_COLOR } from "@/lib/constants/colors";
+import { DEFAULT_BACKGROUND_COLOR, isDarkColor } from "@/lib/constants/colors";
 import { getGoogleFontUrl } from "@/lib/constants/fonts";
 import { X } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
@@ -46,6 +46,7 @@ export function LinkPreview({ profile, links, socialLinks, buttonStyle, fontFami
     .slice(0, 5);
 
   const bgColor = profile?.background_color || DEFAULT_BACKGROUND_COLOR;
+  const dark = isDarkColor(bgColor);
   const currentButtonStyle = buttonStyle || profile?.button_style || "default";
   const currentFontFamily = fontFamily || profile?.font_family || "default";
   const googleFontUrl = getGoogleFontUrl(currentFontFamily);
@@ -80,11 +81,11 @@ export function LinkPreview({ profile, links, socialLinks, buttonStyle, fontFami
               alt={profile?.display_name || profile?.username || "User"}
               className="!h-[60px] !w-[60px]"
             />
-            <h2 className="mt-2 text-center text-sm font-bold text-gray-900" style={fontStyle}>
+            <h2 className={`mt-2 text-center text-sm font-bold ${dark ? "text-white" : "text-gray-900"}`} style={fontStyle}>
               {profile?.display_name || profile?.username || "Display Name"}
             </h2>
             {profile?.bio && (
-              <p className="mt-1 text-center text-xs text-gray-600 line-clamp-2 whitespace-pre-line" style={fontStyle}>
+              <p className={`mt-1 text-center text-xs line-clamp-2 whitespace-pre-line ${dark ? "text-gray-300" : "text-gray-600"}`} style={fontStyle}>
                 {profile.bio}
               </p>
             )}
@@ -113,7 +114,7 @@ export function LinkPreview({ profile, links, socialLinks, buttonStyle, fontFami
           {/* 링크 섹션 */}
           <section className="flex flex-col gap-2 py-3">
             {activeLinks.length === 0 ? (
-              <div className="py-4 text-center text-xs text-gray-400" style={fontStyle}>
+              <div className={`py-4 text-center text-xs ${dark ? "text-gray-500" : "text-gray-400"}`} style={fontStyle}>
                 활성화된 링크가 없습니다
               </div>
             ) : (

@@ -7,7 +7,7 @@ import { PublicProfile } from "@/lib/api/public";
 import { PublicLinkButton } from "./PublicLinkButton";
 import { SocialIcons } from "./SocialIcons";
 import { ContactModal } from "./ContactModal";
-import { DEFAULT_BACKGROUND_COLOR } from "@/lib/constants/colors";
+import { DEFAULT_BACKGROUND_COLOR, isDarkColor } from "@/lib/constants/colors";
 import { getGoogleFontUrl } from "@/lib/constants/fonts";
 
 interface PublicProfileClientProps {
@@ -23,6 +23,7 @@ export function PublicProfileClient({ profile }: PublicProfileClientProps) {
   );
 
   const bgColor = profile.background_color || DEFAULT_BACKGROUND_COLOR;
+  const dark = isDarkColor(bgColor);
   const isProUser = profile.is_pro_user || false;
   const fontFamily = profile.font_family || "default";
   const googleFontUrl = getGoogleFontUrl(fontFamily);
@@ -60,11 +61,11 @@ export function PublicProfileClient({ profile }: PublicProfileClientProps) {
             src={profile.profile_image_url || "/avatar-placeholder.jpg"}
             alt={profile.display_name || profile.username}
           />
-          <h1 className="mt-4 text-center font-extrabold text-username">
+          <h1 className={`mt-4 text-center font-extrabold text-username ${dark ? "text-white" : ""}`}>
             {profile.display_name || profile.username}
           </h1>
           {profile.bio && (
-            <p className="mt-2 text-center font-normal text-bio whitespace-pre-line">
+            <p className={`mt-2 text-center font-normal text-bio whitespace-pre-line ${dark ? "text-gray-300" : ""}`}>
               {profile.bio}
             </p>
           )}
@@ -105,7 +106,7 @@ export function PublicProfileClient({ profile }: PublicProfileClientProps) {
       {hasContactEmail && (
         <button
           onClick={() => setIsContactModalOpen(true)}
-          className="fixed top-4 right-4 z-40 flex h-10 w-10 items-center justify-center text-gray-900 transition-all duration-300 hover:scale-110 active:scale-95 animate-pulse-slow"
+          className={`fixed top-4 right-4 z-40 flex h-10 w-10 items-center justify-center transition-all duration-300 hover:scale-110 active:scale-95 animate-pulse-slow ${dark ? "text-white" : "text-gray-900"}`}
           aria-label="메시지 보내기"
         >
           <svg

@@ -83,10 +83,26 @@ export const PASTEL_COLORS: PastelColor[] = [
     nameKo: "라일락",
     hex: "#F0E6FF",
   },
+  {
+    id: "black",
+    name: "Black",
+    nameKo: "블랙",
+    hex: "#000000",
+  },
 ];
 
 // 기본 배경색 (화이트)
 export const DEFAULT_BACKGROUND_COLOR = "#FFFFFF";
+
+// 배경색이 어두운지 판별 (텍스트 색상 반전 용도)
+export function isDarkColor(hex: string): boolean {
+  const h = hex.replace("#", "");
+  const r = parseInt(h.substring(0, 2), 16);
+  const g = parseInt(h.substring(2, 4), 16);
+  const b = parseInt(h.substring(4, 6), 16);
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return luminance < 0.5;
+}
 
 // hex 값으로 컬러 정보 찾기
 export function getColorByHex(hex: string): PastelColor | undefined {

@@ -40,6 +40,8 @@ interface ColorSwatchProps {
 }
 
 function ColorSwatch({ color, isSelected, onClick, disabled }: ColorSwatchProps) {
+  const isDark = color.hex.toLowerCase() === "#000000";
+
   return (
     <button
       type="button"
@@ -51,25 +53,27 @@ function ColorSwatch({ color, isSelected, onClick, disabled }: ColorSwatchProps)
       `}
       title={color.nameKo}
     >
-      {/* 색상 원형 버튼 */}
       <div
         className={`
           h-12 w-12 rounded-full border-2 shadow-sm
           transition-all duration-200 ease-out
           ${
             isSelected
-              ? "scale-110 border-primary ring-2 ring-primary/30"
-              : "border-gray-200 hover:scale-105 hover:border-gray-300 hover:shadow-md"
+              ? isDark
+                ? "scale-110 border-white ring-2 ring-gray-400"
+                : "scale-110 border-primary ring-2 ring-primary/30"
+              : isDark
+                ? "border-gray-600 hover:scale-105 hover:border-gray-400 hover:shadow-md"
+                : "border-gray-200 hover:scale-105 hover:border-gray-300 hover:shadow-md"
           }
           ${disabled ? "" : "active:scale-95"}
         `}
         style={{ backgroundColor: color.hex }}
       >
-        {/* 선택 체크 표시 */}
         {isSelected && (
           <div className="flex h-full items-center justify-center">
             <svg
-              className="h-5 w-5 text-primary drop-shadow-sm"
+              className={`h-5 w-5 drop-shadow-sm ${isDark ? "text-white" : "text-primary"}`}
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
