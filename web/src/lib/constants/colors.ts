@@ -78,12 +78,6 @@ export const PASTEL_COLORS: PastelColor[] = [
     hex: "#E8DEFF",
   },
   {
-    id: "lilac",
-    name: "Soft Lilac",
-    nameKo: "라일락",
-    hex: "#F0E6FF",
-  },
-  {
     id: "black",
     name: "Black",
     nameKo: "블랙",
