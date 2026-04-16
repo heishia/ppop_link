@@ -160,25 +160,55 @@ class AuthService:
         Returns:
             User: 사용자 정보
         """
-        # 토큰에서 페이로드 추출
         payload = get_token_payload(access_token)
         ppop_user_id = payload.get("sub")
         email = payload.get("email")
-        phone_number = payload.get("phone_number")  # PPOP Auth에서 인증된 전화번호
+        phone_number = payload.get("phone_number")
         
         if not ppop_user_id:
             raise InvalidCredentialsError(detail="Invalid token: missing user ID")
         
-        # 기존 사용자 조회 (PPOP user_id로)
         user = await self.get_user_by_id(UUID(ppop_user_id))
-        
         if user:
             return user
         
-        # 신규 사용자 생성 (PPOP Auth에서 이미 검증됨)
+        if email:
+            existing = await self._get_user_by_email(email)
+            if existing:
+                logger.info(f"User with email {email} exists (old id={existing.id}), updating to new PPOP Auth id: {ppop_user_id}")
+                await self._update_user_ppop_id(existing.id, UUID(ppop_user_id), phone_number)
+                user = await self.get_user_by_id(UUID(ppop_user_id))
+                if user:
+                    return user
+        
         logger.info(f"Creating new user from PPOP Auth: {ppop_user_id}")
         user = await self._create_user_from_ppop(UUID(ppop_user_id), email, phone_number)
         return user
+    
+    async def _get_user_by_email(self, email: str) -> Optional[User]:
+        """이메일로 사용자 조회"""
+        result = db.execute(
+            "SELECT * FROM users WHERE email = %s",
+            (email,),
+            fetch_one=True
+        )
+        if not result:
+            return None
+        return self._map_to_user(result)
+    
+    async def _update_user_ppop_id(self, old_id: str, new_ppop_id: UUID, phone_number: Optional[str] = None) -> None:
+        """기존 사용자의 PPOP Auth ID를 갱신하고 관련 테이블도 업데이트"""
+        new_id = str(new_ppop_id)
+        
+        db.execute(
+            "UPDATE user_plans SET user_id = %s WHERE user_id = %s",
+            (new_id, old_id)
+        )
+        db.execute(
+            "UPDATE users SET id = %s, phone_number = COALESCE(%s, phone_number) WHERE id = %s",
+            (new_id, phone_number, old_id)
+        )
+        logger.info(f"Updated user PPOP Auth ID: {old_id} -> {new_id}")
     
     async def _create_user_from_ppop(self, ppop_user_id: UUID, email: Optional[str], phone_number: Optional[str] = None) -> User:
         """
