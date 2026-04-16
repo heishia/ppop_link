@@ -7,6 +7,15 @@ import { CACHE_CONFIG } from "@/constants/cache";
 // 세션 스토리지 키
 const SESSION_STORAGE_PROFILE_KEY = "temp_profile";
 
+function isPresignedUrl(url: string): boolean {
+  return url.includes("X-Amz-Signature") || url.includes("Signature=");
+}
+
+function addCacheBuster(url: string): string {
+  if (!url || isPresignedUrl(url)) return url;
+  return url.includes("?") ? `${url}&t=${Date.now()}` : `${url}?t=${Date.now()}`;
+}
+
 // API 에러를 문자열로 변환하는 헬퍼 함수
 function parseApiError(error: unknown, fallbackMessage: string): string {
   // axios 에러 타입 가드
@@ -169,12 +178,8 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
       const profileResponse = await profileApi.getProfile();
       const updatedProfile = profileResponse.data;
       
-      // 캐시 버스팅을 위해 타임스탬프 추가
       if (updatedProfile.profile_image_url) {
-        const url = updatedProfile.profile_image_url;
-        updatedProfile.profile_image_url = url.includes("?")
-          ? `${url}&t=${Date.now()}`
-          : `${url}?t=${Date.now()}`;
+        updatedProfile.profile_image_url = addCacheBuster(updatedProfile.profile_image_url);
       }
       
       console.log("[ProfileStore] Updated profile:", updatedProfile);
@@ -204,13 +209,9 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
 
       const response = await profileApi.confirmProfileImageUpload(public_url);
 
-      // 캐시 버스팅을 위해 타임스탬프 추가
       const profile = response.data;
       if (profile?.profile_image_url) {
-        const url = profile.profile_image_url;
-        profile.profile_image_url = url.includes("?")
-          ? `${url}&t=${Date.now()}`
-          : `${url}?t=${Date.now()}`;
+        profile.profile_image_url = addCacheBuster(profile.profile_image_url);
       }
 
       set((state) => ({
@@ -242,12 +243,8 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
       const profileResponse = await profileApi.getProfile();
       const updatedProfile = profileResponse.data;
       
-      // 캐시 버스팅을 위해 타임스탬프 추가
       if (updatedProfile.background_image_url) {
-        const url = updatedProfile.background_image_url;
-        updatedProfile.background_image_url = url.includes("?")
-          ? `${url}&t=${Date.now()}`
-          : `${url}?t=${Date.now()}`;
+        updatedProfile.background_image_url = addCacheBuster(updatedProfile.background_image_url);
       }
       
       set({

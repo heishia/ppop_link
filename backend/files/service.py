@@ -217,32 +217,15 @@ class FileService:
             content = await file.read()
             bucket_name = self._get_bucket_name(bucket)
             
-            # #region agent log - Hypothesis A: Check S3 upload params
-            import json, time
-            debug_log_path = "debug_upload.log"
-            with open(debug_log_path, "a") as f:
-                f.write(json.dumps({"hypothesisId":"A","location":"files/service.py:_upload_image","message":"S3 upload params","data":{"bucket_name":bucket_name,"file_path":file_path,"content_length":len(content),"s3_endpoint":settings.S3_ENDPOINT_URL,"s3_access_key_prefix":settings.S3_ACCESS_KEY_ID[:20] if settings.S3_ACCESS_KEY_ID else None},"timestamp":int(time.time()*1000)}) + "\n")
-            # #endregion
-            
             self.s3.put_object(
                 Bucket=bucket_name,
                 Key=file_path,
                 Body=content,
                 ContentType=file.content_type or 'image/jpeg',
-                ACL='public-read'  # 공개 읽기 권한 설정
+                ACL='public-read'
             )
             
-            # #region agent log - Hypothesis A: S3 upload success
-            with open(debug_log_path, "a") as f:
-                f.write(json.dumps({"hypothesisId":"A","location":"files/service.py:_upload_image","message":"S3 upload SUCCESS","data":{"bucket_name":bucket_name,"file_path":file_path},"timestamp":int(time.time()*1000)}) + "\n")
-            # #endregion
-            
             public_url = self._get_public_url(file_path)
-            
-            # #region agent log - Hypothesis B,D: Check generated URL
-            with open(debug_log_path, "a") as f:
-                f.write(json.dumps({"hypothesisId":"B,D","location":"files/service.py:_upload_image","message":"Generated public URL","data":{"file_path":file_path,"public_url":public_url,"cdn_base_url":settings.CDN_BASE_URL,"cdn_bucket_alias":settings.CDN_BUCKET_ALIAS},"timestamp":int(time.time()*1000)}) + "\n")
-            # #endregion
             
             logger.info(f"File uploaded: {file_path}")
             return public_url

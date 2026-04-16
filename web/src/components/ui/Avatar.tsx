@@ -43,7 +43,7 @@ export function Avatar({ src, alt, size = 120, className }: AvatarProps) {
             console.error("[Avatar] Image load error:", imageSrc, e);
             setImageError(true);
           }}
-          unoptimized={imageSrc.includes("storage.railway.app")}
+          unoptimized={imageSrc.includes("storage") || imageSrc.includes("storageapi")}
         />
       ) : (
         <div className="flex h-full w-full items-center justify-center text-gray-400">
