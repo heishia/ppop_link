@@ -11,7 +11,7 @@ from uuid import UUID
 import httpx
 
 from backend.core.config import settings
-from backend.core.database import db
+from backend.core.database import db, get_connection
 from backend.core.exceptions import (
     InvalidCredentialsError,
     UserNotFoundError,
@@ -197,18 +197,36 @@ class AuthService:
         return self._map_to_user(result)
     
     async def _update_user_ppop_id(self, old_id, new_ppop_id: UUID, phone_number: Optional[str] = None) -> None:
-        """기존 사용자의 PPOP Auth ID를 갱신하고 관련 테이블도 업데이트"""
+        """기존 사용자의 PPOP Auth ID를 갱신 (FK 제약조건을 단일 트랜잭션에서 처리)"""
         new_id = str(new_ppop_id)
         old_id_str = str(old_id)
         
-        db.execute(
-            "UPDATE users SET id = %s, phone_number = COALESCE(%s, phone_number) WHERE id = %s",
-            (new_id, phone_number, old_id_str)
-        )
-        db.execute(
-            "UPDATE user_plans SET user_id = %s WHERE user_id = %s",
-            (new_id, old_id_str)
-        )
+        fk_constraints = [
+            ("links", "links_user_id_fkey"),
+            ("social_links", "social_links_user_id_fkey"),
+            ("user_plans", "user_plans_user_id_fkey"),
+        ]
+        
+        with get_connection() as conn:
+            from psycopg2.extras import RealDictCursor
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                for table, constraint in fk_constraints:
+                    cur.execute(f"ALTER TABLE {table} DROP CONSTRAINT IF EXISTS {constraint}")
+                
+                cur.execute(
+                    "UPDATE users SET id = %s, phone_number = COALESCE(%s, phone_number) WHERE id = %s",
+                    (new_id, phone_number, old_id_str)
+                )
+                cur.execute("UPDATE links SET user_id = %s WHERE user_id = %s", (new_id, old_id_str))
+                cur.execute("UPDATE social_links SET user_id = %s WHERE user_id = %s", (new_id, old_id_str))
+                cur.execute("UPDATE user_plans SET user_id = %s WHERE user_id = %s", (new_id, old_id_str))
+                
+                for table, constraint in fk_constraints:
+                    cur.execute(
+                        f"ALTER TABLE {table} ADD CONSTRAINT {constraint} "
+                        f"FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE"
+                    )
+        
         logger.info(f"Updated user PPOP Auth ID: {old_id_str} -> {new_id}")
     
     async def _create_user_from_ppop(self, ppop_user_id: UUID, email: Optional[str], phone_number: Optional[str] = None) -> User:
