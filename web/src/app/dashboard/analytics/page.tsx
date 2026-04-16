@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
   AreaChart,
@@ -28,9 +28,31 @@ export default function AnalyticsPage() {
   const { isAuthenticated } = useAuthStore();
   const [analytics, setAnalytics] = useState<AnalyticsSummary | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showLoginModal, setShowLoginModal] = useState(false);
-  const [period, setPeriod] = useState<Period>("30d");
+  const [period, setPeriod] = useState<Period>("7d");
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+
+  const fetchAnalytics = useCallback(async (showRefreshIndicator = false) => {
+    try {
+      if (showRefreshIndicator) {
+        setIsRefreshing(true);
+      } else {
+        setIsLoading(true);
+      }
+      const data = await analyticsApi.getAnalytics();
+      setAnalytics(data);
+      setLastUpdated(new Date());
+      setError(null);
+    } catch (err: unknown) {
+      console.error("Failed to fetch analytics:", err);
+      setError("통계 데이터를 불러오지 못했습니다");
+    } finally {
+      setIsLoading(false);
+      setIsRefreshing(false);
+    }
+  }, []);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -38,23 +60,13 @@ export default function AnalyticsPage() {
       setIsLoading(false);
       return;
     }
-
-    const fetchAnalytics = async () => {
-      try {
-        setIsLoading(true);
-        const data = await analyticsApi.getAnalytics();
-        setAnalytics(data);
-        setError(null);
-      } catch (err: unknown) {
-        console.error("Failed to fetch analytics:", err);
-        setError("통계 데이터를 불러오지 못했습니다");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     fetchAnalytics();
-  }, [isAuthenticated]);
+  }, [isAuthenticated, fetchAnalytics]);
+
+  const handleRefresh = () => {
+    if (isRefreshing) return;
+    fetchAnalytics(true);
+  };
 
   const filteredDailyClicks = useMemo(() => {
     if (!analytics) return [];
@@ -72,6 +84,11 @@ export default function AnalyticsPage() {
     );
     return { total, avg, peak: peakDay.clicks, peakDate: peakDay.date };
   }, [filteredDailyClicks]);
+
+  const todayLinkStats = useMemo(() => {
+    if (!analytics) return [];
+    return [...analytics.link_stats].sort((a, b) => b.today_clicks - a.today_clicks);
+  }, [analytics]);
 
   const sortedLinkStats = useMemo(() => {
     if (!analytics) return [];
@@ -109,6 +126,11 @@ export default function AnalyticsPage() {
     return (
       <div className="space-y-4 px-4 py-8">
         <div className="rounded-lg bg-red-50 p-4 text-sm text-red-600">{error}</div>
+        <div className="text-center">
+          <button onClick={() => fetchAnalytics()} className="text-sm text-primary font-medium hover:underline">
+            다시 시도
+          </button>
+        </div>
       </div>
     );
   }
@@ -116,68 +138,96 @@ export default function AnalyticsPage() {
   if (!analytics) return null;
 
   const { overview } = analytics;
+  const timeStr = lastUpdated
+    ? `${lastUpdated.getHours().toString().padStart(2, "0")}:${lastUpdated.getMinutes().toString().padStart(2, "0")}:${lastUpdated.getSeconds().toString().padStart(2, "0")}`
+    : "";
 
-  const overviewCards = [
-    { title: "전체 클릭", value: overview.total_clicks, subtitle: "누적", color: "blue" as const },
-    { title: "오늘", value: overview.today_clicks, subtitle: "today", color: "green" as const },
-    { title: "이번 주", value: overview.week_clicks, subtitle: "최근 7일", color: "purple" as const },
-    { title: "이번 달", value: overview.month_clicks, subtitle: "최근 30일", color: "orange" as const },
-  ];
-
+  // ========== 모바일 ==========
   if (isMobile) {
     return (
       <div className="px-4 py-3 space-y-4 pb-24">
-        <p className="text-sm text-gray-600">링크 클릭 통계를 확인하세요</p>
-
-        {/* Overview cards */}
-        <div className="grid grid-cols-2 gap-3">
-          {overviewCards.map((card) => (
-            <StatCard key={card.title} {...card} compact />
-          ))}
+        {/* 오늘 히어로 + 새로고침 */}
+        <div className="rounded-2xl bg-gradient-to-br from-green-500 to-emerald-600 p-4 text-white">
+          <div className="flex items-center justify-between mb-1">
+            <p className="text-sm font-medium text-white/80">오늘의 클릭</p>
+            <RefreshButton onClick={handleRefresh} isRefreshing={isRefreshing} compact />
+          </div>
+          <p className="text-4xl font-extrabold">{overview.today_clicks.toLocaleString()}</p>
+          {timeStr && <p className="mt-1 text-xs text-white/60">마지막 업데이트 {timeStr}</p>}
         </div>
 
-        {/* Period selector + Chart */}
+        {/* 오늘 링크별 클릭 */}
+        <Card className="!p-4">
+          <h3 className="text-sm font-semibold text-gray-900 mb-3">오늘 링크별 클릭</h3>
+          <TodayLinkStats links={todayLinkStats} compact />
+        </Card>
+
+        {/* 요약 카드 */}
+        <div className="grid grid-cols-3 gap-2">
+          <MiniCard label="이번 주" value={overview.week_clicks} color="purple" />
+          <MiniCard label="이번 달" value={overview.month_clicks} color="orange" />
+          <MiniCard label="전체" value={overview.total_clicks} color="blue" />
+        </div>
+
+        {/* 차트 */}
         <Card className="!p-4">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-sm font-semibold text-gray-900">클릭 추이</h3>
             <PeriodSelector period={period} onChange={setPeriod} compact />
           </div>
-
-          <div className="flex gap-3 mb-3 text-xs">
-            <MiniStat label="합계" value={periodStats.total} />
-            <MiniStat label="일평균" value={periodStats.avg} />
-            <MiniStat label="최고" value={periodStats.peak} />
-          </div>
-
           <div className="h-40 -ml-2">
             <ClickTrendChart data={filteredDailyClicks} compact />
           </div>
         </Card>
 
-        {/* Link stats */}
+        {/* 전체 링크 순위 */}
         <Card className="!p-4">
-          <h3 className="text-sm font-semibold text-gray-900 mb-3">링크별 클릭</h3>
+          <h3 className="text-sm font-semibold text-gray-900 mb-3">전체 클릭 순위</h3>
           <LinkStatsSection links={sortedLinkStats} compact />
         </Card>
       </div>
     );
   }
 
+  // ========== 데스크톱 ==========
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">통계</h1>
-        <p className="mt-1 text-sm text-gray-600">링크 클릭 통계를 확인하세요</p>
+      {/* 헤더 */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">통계</h1>
+          <p className="mt-1 text-sm text-gray-600">링크 클릭 통계를 확인하세요</p>
+        </div>
+        <div className="flex items-center gap-3">
+          {timeStr && <span className="text-xs text-gray-400">업데이트 {timeStr}</span>}
+          <RefreshButton onClick={handleRefresh} isRefreshing={isRefreshing} />
+        </div>
       </div>
 
-      {/* Overview cards */}
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-        {overviewCards.map((card) => (
-          <StatCard key={card.title} {...card} />
-        ))}
+      {/* 오늘 히어로 섹션 */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <div className="rounded-2xl bg-gradient-to-br from-green-500 to-emerald-600 p-6 text-white lg:col-span-1">
+          <p className="text-sm font-medium text-white/80">오늘의 클릭</p>
+          <p className="mt-2 text-5xl font-extrabold">{overview.today_clicks.toLocaleString()}</p>
+          <div className="mt-4 flex gap-4 text-sm text-white/70">
+            <span>이번 주 <span className="font-semibold text-white">{overview.week_clicks.toLocaleString()}</span></span>
+            <span>이번 달 <span className="font-semibold text-white">{overview.month_clicks.toLocaleString()}</span></span>
+            <span>전체 <span className="font-semibold text-white">{overview.total_clicks.toLocaleString()}</span></span>
+          </div>
+        </div>
+
+        {/* 오늘 링크별 클릭 */}
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle>오늘 링크별 클릭</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <TodayLinkStats links={todayLinkStats} />
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Click trend chart */}
+      {/* 클릭 추이 차트 */}
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -197,11 +247,11 @@ export default function AnalyticsPage() {
         </CardContent>
       </Card>
 
-      {/* Link stats with horizontal bar chart */}
+      {/* 전체 링크 순위 */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>링크별 클릭 순위</CardTitle>
+            <CardTitle>전체 클릭 순위</CardTitle>
           </CardHeader>
           <CardContent>
             {sortedLinkStats.length > 0 ? (
@@ -228,6 +278,101 @@ export default function AnalyticsPage() {
 }
 
 /* ============== Sub Components ============== */
+
+function RefreshButton({
+  onClick,
+  isRefreshing,
+  compact,
+}: {
+  onClick: () => void;
+  isRefreshing: boolean;
+  compact?: boolean;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={isRefreshing}
+      className={`flex items-center gap-1.5 rounded-lg font-medium transition-all active:scale-95 disabled:opacity-60 ${
+        compact
+          ? "bg-white/20 px-2.5 py-1 text-xs text-white hover:bg-white/30"
+          : "border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700 shadow-sm hover:bg-gray-50"
+      }`}
+    >
+      <svg
+        className={`${compact ? "w-3.5 h-3.5" : "w-4 h-4"} ${isRefreshing ? "animate-spin" : ""}`}
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+        />
+      </svg>
+      {!compact && (isRefreshing ? "새로고침 중..." : "새로고침")}
+    </button>
+  );
+}
+
+function TodayLinkStats({ links, compact }: { links: LinkStatItem[]; compact?: boolean }) {
+  if (links.length === 0) return <EmptyState />;
+
+  const maxToday = Math.max(...links.map((l) => l.today_clicks), 1);
+  const hasAnyClicks = links.some((l) => l.today_clicks > 0);
+
+  if (!hasAnyClicks) {
+    return (
+      <div className={`flex flex-col items-center justify-center text-gray-400 ${compact ? "py-4" : "py-6"}`}>
+        <p className={compact ? "text-xs" : "text-sm"}>오늘은 아직 클릭이 없습니다</p>
+        <p className={`mt-1 ${compact ? "text-[10px]" : "text-xs"}`}>링크를 공유하고 클릭을 받아보세요</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className={compact ? "space-y-2.5" : "space-y-3 max-h-56 overflow-y-auto pr-1"}>
+      {links.map((link) => {
+        const pct = maxToday > 0 ? (link.today_clicks / maxToday) * 100 : 0;
+        return (
+          <div key={link.link_id} className="space-y-1">
+            <div className="flex items-center justify-between gap-2">
+              <h4 className={`truncate font-medium text-gray-900 ${compact ? "text-xs" : "text-sm"}`}>
+                {link.title}
+              </h4>
+              <span className={`flex-shrink-0 font-bold ${
+                link.today_clicks > 0 ? "text-green-600" : "text-gray-300"
+              } ${compact ? "text-sm" : "text-base"}`}>
+                {link.today_clicks}
+              </span>
+            </div>
+            <div className={`overflow-hidden rounded-full bg-gray-100 ${compact ? "h-1.5" : "h-2"}`}>
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-green-400 to-emerald-500 transition-all duration-500"
+                style={{ width: `${pct}%` }}
+              />
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function MiniCard({ label, value, color }: { label: string; value: number; color: "blue" | "purple" | "orange" }) {
+  const styles = {
+    blue: "bg-blue-50 border-blue-200 text-blue-700",
+    purple: "bg-purple-50 border-purple-200 text-purple-700",
+    orange: "bg-orange-50 border-orange-200 text-orange-700",
+  };
+  return (
+    <div className={`rounded-xl border p-2.5 text-center ${styles[color]}`}>
+      <p className="text-[10px] opacity-70">{label}</p>
+      <p className="text-lg font-bold">{value.toLocaleString()}</p>
+    </div>
+  );
+}
 
 function PeriodSelector({
   period,
@@ -263,15 +408,7 @@ function PeriodSelector({
   );
 }
 
-function MiniStat({
-  label,
-  value,
-  detail,
-}: {
-  label: string;
-  value: number;
-  detail?: string;
-}) {
+function MiniStat({ label, value, detail }: { label: string; value: number; detail?: string }) {
   return (
     <div>
       <p className="text-xs text-gray-500">{label}</p>
@@ -281,13 +418,7 @@ function MiniStat({
   );
 }
 
-function ClickTrendChart({
-  data,
-  compact,
-}: {
-  data: DailyClickData[];
-  compact?: boolean;
-}) {
+function ClickTrendChart({ data, compact }: { data: DailyClickData[]; compact?: boolean }) {
   const formatDate = (dateStr: string) => {
     const d = new Date(dateStr);
     return `${d.getMonth() + 1}/${d.getDate()}`;
@@ -406,7 +537,7 @@ function LinkStatsSection({ links, compact }: { links: LinkStatItem[]; compact?:
   const maxClicks = Math.max(...links.map((l) => l.click_count), 1);
 
   return (
-    <div className={`space-y-${compact ? "3" : "4"} ${!compact ? "max-h-72 overflow-y-auto pr-1" : ""}`}>
+    <div className={`${compact ? "space-y-3" : "space-y-4 max-h-72 overflow-y-auto pr-1"}`}>
       {links.map((link, index) => {
         const pct = (link.click_count / maxClicks) * 100;
         return (
@@ -440,7 +571,7 @@ function LinkStatsSection({ links, compact }: { links: LinkStatItem[]; compact?:
               />
             </div>
             <div className={`flex gap-3 ${compact ? "text-[10px] ml-7" : "text-xs ml-8"} text-gray-500`}>
-              <span>오늘 <span className="font-medium text-gray-700">{link.today_clicks}</span></span>
+              <span>오늘 <span className="font-medium text-green-600">{link.today_clicks}</span></span>
               <span>7일 <span className="font-medium text-gray-700">{link.week_clicks}</span></span>
               <span>30일 <span className="font-medium text-gray-700">{link.month_clicks}</span></span>
             </div>
@@ -459,38 +590,6 @@ function EmptyState() {
       </svg>
       <p className="text-sm">아직 링크가 없습니다</p>
       <p className="mt-1 text-xs">링크를 추가하고 통계를 확인하세요</p>
-    </div>
-  );
-}
-
-function StatCard({
-  title,
-  value,
-  subtitle,
-  color,
-  compact,
-}: {
-  title: string;
-  value: number;
-  subtitle: string;
-  color: "blue" | "green" | "purple" | "orange";
-  compact?: boolean;
-}) {
-  const styles = {
-    blue: { bg: "bg-blue-50", border: "border-blue-200", text: "text-blue-600", value: "text-blue-700" },
-    green: { bg: "bg-green-50", border: "border-green-200", text: "text-green-600", value: "text-green-700" },
-    purple: { bg: "bg-purple-50", border: "border-purple-200", text: "text-purple-600", value: "text-purple-700" },
-    orange: { bg: "bg-orange-50", border: "border-orange-200", text: "text-orange-600", value: "text-orange-700" },
-  };
-  const s = styles[color];
-
-  return (
-    <div className={`rounded-xl border ${s.bg} ${s.border} ${s.text} ${compact ? "p-3" : "p-4"}`}>
-      <p className={`font-medium ${compact ? "text-xs" : "text-sm"}`}>{title}</p>
-      <p className={`font-bold ${s.value} ${compact ? "mt-0.5 text-2xl" : "mt-1 text-3xl"}`}>
-        {value.toLocaleString()}
-      </p>
-      <p className={`opacity-75 ${compact ? "mt-0.5 text-[10px]" : "mt-1 text-xs"}`}>{subtitle}</p>
     </div>
   );
 }
