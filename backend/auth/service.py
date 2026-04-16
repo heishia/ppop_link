@@ -202,12 +202,12 @@ class AuthService:
         old_id_str = str(old_id)
         
         db.execute(
-            "UPDATE user_plans SET user_id = %s WHERE user_id = %s",
-            (new_id, old_id_str)
-        )
-        db.execute(
             "UPDATE users SET id = %s, phone_number = COALESCE(%s, phone_number) WHERE id = %s",
             (new_id, phone_number, old_id_str)
+        )
+        db.execute(
+            "UPDATE user_plans SET user_id = %s WHERE user_id = %s",
+            (new_id, old_id_str)
         )
         logger.info(f"Updated user PPOP Auth ID: {old_id_str} -> {new_id}")
     
