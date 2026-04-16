@@ -1,15 +1,12 @@
 "use client";
 
 import React from "react";
-import { useRouter } from "next/navigation";
 import { Avatar } from "@/components/ui/Avatar";
 import { SocialPlatformIcon } from "@/components/ui/SocialPlatformIcon";
 import { Link, SocialLink } from "@/lib/api/links";
 import { User, ButtonStyle, FontFamily } from "@/lib/api/auth";
 import { DEFAULT_BACKGROUND_COLOR, isDarkColor } from "@/lib/constants/colors";
 import { getGoogleFontUrl } from "@/lib/constants/fonts";
-import { X } from "lucide-react";
-import { useAuthStore } from "@/store/authStore";
 
 // 버튼 스타일별 클래스 정의 (미리보기용)
 const BUTTON_STYLE_CLASSES: Record<ButtonStyle, string> = {
@@ -35,11 +32,6 @@ interface LinkPreviewProps {
 
 // 미리보기 전용 컴포넌트 - 대시보드에서 실제 링크 페이지가 어떻게 보일지 표시
 export function LinkPreview({ profile, links, socialLinks, buttonStyle, fontFamily }: LinkPreviewProps) {
-  const router = useRouter();
-  const { subscription } = useAuthStore();
-  
-  const isProUser = subscription?.plan === "PRO" && subscription?.status === "ACTIVE" && subscription?.hasAccess;
-
   const activeLinks = links.filter((link) => link.is_active);
   const activeSocialLinks = socialLinks
     .filter((link) => link.is_active)
@@ -53,11 +45,6 @@ export function LinkPreview({ profile, links, socialLinks, buttonStyle, fontFami
   const fontStyle = currentFontFamily === "default" 
     ? { fontFamily: "Iseoyun, sans-serif" }
     : { fontFamily: `"${currentFontFamily}", sans-serif` };
-
-  // X 버튼 클릭 시 결제 페이지로 이동
-  const handleRemoveWatermark = () => {
-    router.push("/dashboard/pricing");
-  };
 
   return (
     <>
@@ -132,28 +119,17 @@ export function LinkPreview({ profile, links, socialLinks, buttonStyle, fontFami
         </div>
       </div>
 
-      {/* PPOPLINK 워터마크 푸터 - BASIC 사용자용, PRO 사용자는 숨김 */}
-      {!isProUser && (
-        <footer className="absolute bottom-2 left-0 right-0 flex justify-center">
-          <div className="relative group">
-            <button
-              onClick={handleRemoveWatermark}
-              className="absolute -top-2 -right-2 z-10 flex h-5 w-5 items-center justify-center rounded-full bg-gray-800/80 text-white opacity-70 transition-all hover:opacity-100 hover:bg-primary"
-              title="PRO upgrade to remove watermark"
-            >
-              <X className="h-3 w-3" />
-            </button>
-            <a
-              href="/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="block px-4 py-1 text-sm font-extrabold text-primary/60 transition-all hover:text-primary hover:scale-105"
-            >
-              PPOPLINK
-            </a>
-          </div>
-        </footer>
-      )}
+      {/* PPOPLINK 워터마크 푸터 - 모든 사용자에게 표시 */}
+      <footer className="absolute bottom-2 left-0 right-0 flex justify-center">
+        <a
+          href="/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block px-4 py-1 text-sm font-extrabold text-primary/60 transition-all hover:text-primary hover:scale-105"
+        >
+          PPOPLINK
+        </a>
+      </footer>
       </div>
     </>
   );

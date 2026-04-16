@@ -24,7 +24,6 @@ export function PublicProfileClient({ profile }: PublicProfileClientProps) {
 
   const bgColor = profile.background_color || DEFAULT_BACKGROUND_COLOR;
   const dark = isDarkColor(bgColor);
-  const isProUser = profile.is_pro_user || false;
   const fontFamily = profile.font_family || "default";
   const googleFontUrl = getGoogleFontUrl(fontFamily);
   const hasContactEmail = !!profile.contact_email;
@@ -89,19 +88,17 @@ export function PublicProfileClient({ profile }: PublicProfileClientProps) {
         </section>
       </MobileContainer>
 
-      {!isProUser && (
-        <footer className="fixed bottom-0 left-0 right-0 flex justify-center py-3 pointer-events-none">
-          <a
-            href="/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="pointer-events-auto text-2xl sm:text-3xl font-bold text-primary/50 transition-all hover:text-primary hover:scale-105"
-            style={{ fontFamily: "Iseoyun, sans-serif" }}
-          >
-            PPOPLINK
-          </a>
-        </footer>
-      )}
+      <footer className="fixed bottom-0 left-0 right-0 flex justify-center py-3 pointer-events-none">
+        <a
+          href="/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="pointer-events-auto text-2xl sm:text-3xl font-bold text-primary/50 transition-all hover:text-primary hover:scale-105"
+          style={{ fontFamily: "Iseoyun, sans-serif" }}
+        >
+          PPOPLINK
+        </a>
+      </footer>
 
       {hasContactEmail && (
         <button
